@@ -72,6 +72,11 @@ function Header({ user, teamMembers, allAssignees, workspace, setWorkspace }) {
     setIsNamingTeam(false);
   };
 
+  const handleCancelAddTeam = () => {
+    setNewTeamName('');
+    setIsNamingTeam(false);
+  };
+
   const handleInvite = async () => {
     if (!inviteEmail.trim() || workspace === 'personal') return;
     if (!currentTeam) return;
@@ -252,6 +257,9 @@ function Header({ user, teamMembers, allAssignees, workspace, setWorkspace }) {
               />
               <button className="btn-primary" onClick={handleAddTeam}>
                 Create
+              </button>
+              <button className="btn-ghost" onClick={handleCancelAddTeam}>
+                Cancel
               </button>
             </div>
           )}

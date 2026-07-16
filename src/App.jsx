@@ -1,3 +1,4 @@
+import './App.css';
 import { useState, useEffect } from 'react';
 import { isOverdue } from './utils/dateHelpers';
 import {
@@ -12,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { db, auth } from './firebase';
+import Inventory from './components/Inventory';
 import Login from './components/Login';
 import Header from './components/Header';
 import TaskForm from './components/TaskForm';
@@ -194,6 +196,13 @@ function App() {
           onClick={() => setActiveTab('stats')}
         >
           Stats & History
+        </button>
+
+        <button
+          className={activeTab === 'inventory' ? 'tab active' : 'tab'}
+          onClick={() => setActiveTab('inventory')}
+        >
+          Inventory
         </button>
       </nav>
 
@@ -380,6 +389,11 @@ function App() {
           currentUser={user}
         />
       )}
+
+      {activeTab === 'inventory' && (
+        <Inventory user={user} workspace={workspace} />
+      )}
+
     </div>
   );
 }

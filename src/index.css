@@ -187,3 +187,4 @@ body { margin: 0; }
 .due-date { font-size: 12px; color: var(--text-muted); }
 .due-date.overdue-text { color: #b45309; font-weight: 700; }
 .overdue-badge { font-size: 11px; background: #fffbeb; color: #b45309; border-radius: 6px; padding: 2px 8px; font-weight: 700; }
+
