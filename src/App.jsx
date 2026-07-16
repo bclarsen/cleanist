@@ -18,8 +18,6 @@ import TaskForm from './components/TaskForm';
 import TaskList from './components/TaskList';
 import StatsPanel from './components/StatsPanel';
 
-// TESTING
-
 const tasksRef = collection(db, 'tasks');
 const invitesRef = collection(db, 'teamInvites');
 
