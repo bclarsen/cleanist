@@ -43,3 +43,8 @@ export function getNextDueLabel(lastCompleted, frequency) {
   if (next < now) return 'Overdue!';
   return `Due: ${next.toLocaleDateString()}`;
 }
+
+export function isRecentlyCompleted(task, hours = 24) {
+  if (!task.lastCompleted) return false;
+  return Date.now() - task.lastCompleted < hours * 60 * 60 * 1000;
+}

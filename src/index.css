@@ -176,7 +176,7 @@ body { margin: 0; }
   box-shadow: 0 1px 3px rgba(0,0,0,0.02); cursor: pointer;
 }
 .task-item-card.done { opacity: 0.5; filter: grayscale(20%); }
-.task-item-card.overdue { border: 1px solid #b45309; }
+.task-item-card.overdue { border: 2px solid #ef4444; }
 
 .task-border-left { width: 4px; flex-shrink: 0; }
 .task-item-content-wrapper { flex: 1; display: flex; flex-direction: column; min-width: 0; }
@@ -212,3 +212,11 @@ body { margin: 0; }
 .due-date.overdue-text { color: #b45309; font-weight: 700; }
 .overdue-badge { font-size: 11px; background: #fffbeb; color: #b45309; border-radius: 6px; padding: 2px 8px; font-weight: 700; }
 
+.status-heading {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--teal-dark);
+  margin: 24px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--border);
+}
