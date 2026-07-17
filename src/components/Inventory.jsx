@@ -59,8 +59,6 @@ function Inventory({ user, workspace }) {
     try {
       await updateDoc(doc(db, 'inventory', itemId), {
         quantity: newQty,
-        updatedBy: user.uid,
-        updatedAt: serverTimestamp(),
       });
     } catch (err) {
       console.error('Error updating quantity:', err);
@@ -75,73 +73,120 @@ function Inventory({ user, workspace }) {
     }
   };
 
-  const getStatusBadgeClass = (itemStatus) => {
-    if (itemStatus === 'In Stock') return 'priority-pill priority-low';
-    if (itemStatus === 'Low') return 'priority-pill priority-medium';
-    return 'priority-pill priority-high';
-  };
-
   return (
     <div className="inventory-panel" style={{ marginTop: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <h2>Cleaning Supplies Inventory</h2>
-        <button
-          className="btn-primary"
-          onClick={() => setShowAddForm(!showAddForm)}
-        >
-          {showAddForm ? 'Cancel' : '+ Add Supply'}
-        </button>
+        <h2>Household Inventory</h2>
+      </div>
+      <div className="task-form-container" style={{ marginBottom: '20px' }}>
+        {!showAddForm ? (
+          <button className="btn-primary" onClick={() => setShowAddForm(true)}>
+            + Add New Item
+          </button>
+        ) : (
+          <div className="task-form">
+            <input
+              type="text"
+              className="task-name-input"
+              placeholder="Item Name"
+              value={itemName}
+              onChange={(e) => setItemName(e.target.value)}
+              autoFocus
+            />
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Quantity</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="form-actions">
+              <button
+                className="btn-ghost"
+                onClick={() => {
+                  setShowAddForm(false);
+                  setItemName('');
+                  setQuantity(1);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn-primary"
+                onClick={handleAddItem}
+                disabled={!itemName.trim()}
+              >
+                Add Item
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {showAddForm && (
-        <form onSubmit={handleAddItem} className="create-team-form" style={{ marginBottom: '20px', gap: '8px' }}>
-          <input
-            type="text"
-            placeholder="Supply Name (e.g. Paper Towels, Windex)"
-            value={itemName}
-            onChange={(e) => setItemName(e.target.value)}
-          />
-          <input
-            type="number"
-            min="1"
-            placeholder="Qty"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            style={{ width: '80px' }}
-          />
-          <button type="submit" className="btn-primary">Add Item</button>
-        </form>
-      )}
-
       {items.length === 0 ? (
-        <p className="empty-note">No cleaning supplies tracked yet. Click "+ Add Supply" to get started!</p>
+        <p className="empty-note">
+          No inventory items added yet. Click "+ Add Item" to get started!
+        </p>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div className="inventory-list" style={{ display: 'grid', gap: '10px' }}>
           {items.map((item) => (
             <div
               key={item.id}
               className="task-item"
-              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px' }}
+              style={{
+                display: 'flex',
+                justify: 'space-between',
+                alignItems: 'center',
+                padding: '12px 16px',
+              }}
             >
               <div>
                 <strong>{item.name}</strong>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '10px',
+                  alignItems: 'center',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
                   <button
                     className="btn-ghost"
-                    onClick={() => handleUpdateQuantity(item.id, item.quantity || 0, -1)}
+                    onClick={() =>
+                      handleUpdateQuantity(item.id, item.quantity || 0, -1)
+                    }
                     style={{ padding: '2px 8px', fontWeight: 'bold' }}
                   >
                     -
                   </button>
-                  <span style={{ fontWeight: '700', minWidth: '24px', textAlign: 'center' }}>
+                  <span
+                    style={{
+                      fontWeight: '700',
+                      minWidth: '24px',
+                      textAlign: 'center',
+                    }}
+                  >
                     {item.quantity ?? 0}
                   </span>
                   <button
                     className="btn-ghost"
-                    onClick={() => handleUpdateQuantity(item.id, item.quantity || 0, 1)}
+                    onClick={() =>
+                      handleUpdateQuantity(item.id, item.quantity || 0, 1)
+                    }
                     style={{ padding: '2px 8px', fontWeight: 'bold' }}
                   >
                     +

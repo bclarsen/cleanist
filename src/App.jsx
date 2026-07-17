@@ -19,11 +19,12 @@ import Header from './components/Header';
 import TaskForm from './components/TaskForm';
 import TaskList from './components/TaskList';
 import StatsPanel from './components/StatsPanel';
+import LivingSpace from './components/LivingSpace';
 
 const tasksRef = collection(db, 'tasks');
 const invitesRef = collection(db, 'teamInvites');
 
-const FILTER_ROOMS = ['Kitchen', 'Bathroom', 'Living Room', 'Bedroom', 'Other'];
+const DEFAULT_ROOMS = ['Kitchen', 'Bathroom', 'Living Room', 'Bedroom', 'Other'];
 const FILTER_PRIORITIES = [
   { value: 'high', label: 'High' },
   { value: 'medium', label: 'Medium' },
@@ -52,6 +53,19 @@ function App() {
   // New: filter menu UI state
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [expandedFilterType, setExpandedFilterType] = useState(null);
+
+  const [rooms, setRooms] = useState(DEFAULT_ROOMS);
+  useEffect(() => {
+    if (!workspace) return;
+    const unsub = onSnapshot(doc(db, 'workspaces', workspace), (docSnap) => {
+      if (docSnap.exists() && docSnap.data().rooms) {
+        setRooms(docSnap.data().rooms);
+      } else {
+        setRooms(DEFAULT_ROOMS);
+      }
+    });
+    return unsub;
+  }, [workspace]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (currentUser) => {
@@ -170,6 +184,7 @@ function App() {
     setExpandedFilterType(null);
   };
 
+
   const toggleFilterType = (type) => {
     setExpandedFilterType(expandedFilterType === type ? null : type);
   };
@@ -191,12 +206,6 @@ function App() {
         >
           Tasks
         </button>
-        <button
-          className={activeTab === 'stats' ? 'tab active' : 'tab'}
-          onClick={() => setActiveTab('stats')}
-        >
-          Stats & History
-        </button>
 
         <button
           className={activeTab === 'inventory' ? 'tab active' : 'tab'}
@@ -204,6 +213,21 @@ function App() {
         >
           Inventory
         </button>
+
+        <button
+          className={activeTab === 'living-space' ? 'tab active' : 'tab'}
+          onClick={() => setActiveTab('living-space')}
+        >
+          Living Space
+        </button>
+
+        <button
+          className={activeTab === 'stats' ? 'tab active' : 'tab'}
+          onClick={() => setActiveTab('stats')}
+        >
+          Stats & History
+        </button>
+
       </nav>
 
       {activeTab === 'tasks' && (
@@ -212,6 +236,7 @@ function App() {
             user={user}
             allAssignees={allAssignees}
             workspace={workspace}
+            rooms={rooms}
           />
 
           <div className="filters" style={{ padding: '20px 24px 16px' }}>
@@ -290,7 +315,7 @@ function App() {
                       style={{ width: '100%', marginBottom: '8px' }}
                     >
                       <option value="All">All</option>
-                      {FILTER_ROOMS.map((room) => (
+                      {rooms.map((room) => (
                         <option key={room} value={room}>
                           {room}
                         </option>
@@ -382,16 +407,20 @@ function App() {
         </>
       )}
 
+      {activeTab === 'inventory' && (
+        <Inventory user={user} workspace={workspace} />
+      )}
+
+      {activeTab === 'living-space' && (
+        <LivingSpace rooms={rooms} workspace={workspace} />
+      )}
+
       {activeTab === 'stats' && (
         <StatsPanel
           tasks={tasks}
           allAssignees={allAssignees}
           currentUser={user}
         />
-      )}
-
-      {activeTab === 'inventory' && (
-        <Inventory user={user} workspace={workspace} />
       )}
 
     </div>

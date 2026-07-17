@@ -132,7 +132,7 @@ function Header({ user, teamMembers, allAssignees, workspace, setWorkspace }) {
     <>
       <header className="app-header">
         <div className="header-title">
-          <span className="header-emoji">🧹</span>
+          <img src="/Cleanist_Logo.png" alt="Cleanist Logo" className="header-logo" />
           <h1>Cleanist</h1>
         </div>
         <div className="header-actions">

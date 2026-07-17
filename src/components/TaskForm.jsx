@@ -16,7 +16,7 @@ const PRIORITIES = [
   { value: 'low', label: 'Low' },
 ];
 
-function TaskForm({ user, allAssignees = [], workspace }) {
+function TaskForm({ user, allAssignees = [], workspace, rooms = ['Kitchen', 'Bathroom', 'Living Room', 'Bedroom', 'Other'] }) {
   const [expanded, setExpanded] = useState(false);
   const [name, setName] = useState('');
   const [room, setRoom] = useState('Kitchen');
@@ -24,7 +24,7 @@ function TaskForm({ user, allAssignees = [], workspace }) {
   const [priority, setPriority] = useState('medium');
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
-  const [assignedTo, setAssignedTo] = useState(user?.uid || '');
+  const [assignedTo, setAssignedTo] = useState(workspace === 'personal' ? user?.uid : '');
 
   const addTask = async () => {
     if (!name.trim()) return;
@@ -34,13 +34,12 @@ function TaskForm({ user, allAssignees = [], workspace }) {
       frequency,
       priority,
       dueDate: dueDate || null,
-      assignedTo,
+      assignedTo: workspace === 'personal' ? user.uid : assignedTo,
       notes: notes.trim(),
       lastCompleted: null,
       completionHistory: [],
       workspace: workspace, // Ensures task is tagged with the current workspace ID
     });
-
     setName('');
     setNotes('');
     setDueDate('');
@@ -66,7 +65,7 @@ function TaskForm({ user, allAssignees = [], workspace }) {
             <div className="form-group">
               <label>Room</label>
               <select value={room} onChange={(e) => setRoom(e.target.value)}>
-                {ROOMS.map((r) => (
+                {rooms.map((r) => (
                   <option key={r} value={r}>
                     {r}
                   </option>
@@ -109,19 +108,22 @@ function TaskForm({ user, allAssignees = [], workspace }) {
                 onChange={(e) => setDueDate(e.target.value)}
               />
             </div>
-            <div className="form-group">
-              <label>Assign To</label>
-              <select
-                value={assignedTo}
-                onChange={(e) => setAssignedTo(e.target.value)}
-              >
-                {allAssignees.map((a) => (
-                  <option key={a.uid} value={a.uid}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {workspace !== 'personal' && (
+              <div className="form-group">
+                <label>Assign To</label>
+                <select
+                  value={assignedTo}
+                  onChange={(e) => setAssignedTo(e.target.value)}
+                >
+                  <option value="">Unassigned</option>
+                  {allAssignees.map((a) => (
+                    <option key={a.uid} value={a.uid}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
           <div className="form-group">
             <label>Notes</label>

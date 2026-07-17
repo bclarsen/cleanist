@@ -32,7 +32,11 @@
   gap: 10px;
 }
 
-.header-emoji { font-size: 24px; }
+.header-logo {
+  height: 32px; /* Adjust height to fit your header layout */
+  width: auto;
+  object-fit: contain;
+}
 
 .header-title h1 {
   font-size: 20px;
@@ -47,6 +51,7 @@
   gap: 12px;
   flex-wrap: wrap;
 }
+
 
 .user-info {
   display: flex;
@@ -435,7 +440,7 @@ button {
 
 .btn-google:hover { background: var(--bg-subtle); }
 
-input[type="text"], input[type="email"], input[type="date"], select {
+input[type="text"], input[type="email"], input[type="date"], input[type="number"], select {
   font-family: var(--sans);
   font-size: 14px;
   padding: 8px 12px;
