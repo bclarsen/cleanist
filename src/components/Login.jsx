@@ -13,7 +13,7 @@ function Login() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <div className="login-emoji">🧹</div>
+        <img src="/Cleanist_Logo.png" alt="Cleanist Logo" className="login-logo" style={{ height: '60px', marginBottom: '16px' }} />
         <h1>Cleanist</h1>
         <p>Track tasks, assign chores, and keep your home clean together.</p>
         <button className="btn-primary btn-google" onClick={handleSignIn}>
