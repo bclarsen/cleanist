@@ -6,10 +6,12 @@ import {
   addDoc,
   deleteDoc,
   doc,
+  updateDoc,
   query,
   where,
   onSnapshot,
   serverTimestamp,
+  arrayRemove
 } from 'firebase/firestore';
 
 const teamsRef = collection(db, 'teams');
@@ -75,6 +77,17 @@ function Header({ user, teamMembers, allAssignees, workspace, setWorkspace }) {
   const handleCancelAddTeam = () => {
     setNewTeamName('');
     setIsNamingTeam(false);
+  };
+
+  const handleRemoveMember = async (uid) => {
+    if (!currentTeam || uid === user.uid) return; // can't remove yourself here
+    try {
+      await updateDoc(doc(db, 'teams', workspace), {
+        members: arrayRemove(uid),
+      });
+    } catch (err) {
+      console.error('Error removing member:', err);
+    }
   };
 
   const handleInvite = async () => {
@@ -223,7 +236,7 @@ function Header({ user, teamMembers, allAssignees, workspace, setWorkspace }) {
                         setShowManageMenu(false);
                       }}
                     >
-                      Add members
+                      Team members
                     </button>
                     {isCreator && (
                       <button
@@ -265,40 +278,62 @@ function Header({ user, teamMembers, allAssignees, workspace, setWorkspace }) {
           )}
 
           {showAddMembers && workspace !== 'personal' && (
-            <div
-              className="invite-form"
-              style={{
-                marginTop: '15px',
-                display: 'flex',
-                gap: '8px',
-                alignItems: 'center',
-              }}
-            >
-              <input
-                type="email"
-                placeholder="Roommate's email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-              />
-              <button className="btn-primary" onClick={handleInvite}>
-                Invite
-              </button>
-              <button className="btn-ghost" onClick={handleCancelInvite}>
-                Cancel
-              </button>
-              {inviteStatus && (
-                <p
-                  className={
-                    inviteStatus.type === 'success'
-                      ? 'status-success'
-                      : 'status-error'
-                  }
-                  style={{ margin: 0 }}
+              <div style={{ marginTop: '15px' }}>
+                <ul className="team-list">
+                  {(currentTeam?.members || []).map((uid) => {
+                    const member = allAssignees.find((a) => a.uid === uid);
+                    return (
+                        <li key={uid} className="team-member">
+                          {member?.name || uid} {uid === user.uid && '(you)'}
+                          {isCreator && uid !== user.uid && (
+                              <button
+                                  className="btn-delete"
+                                  title="Remove member"
+                                  onClick={() => handleRemoveMember(uid)}
+                              >
+                                ✕
+                              </button>
+                          )}
+                        </li>
+                    );
+                  })}
+                </ul>
+
+                <div
+                    className="invite-form"
+                    style={{
+                      marginTop: '15px',
+                      display: 'flex',
+                      gap: '8px',
+                      alignItems: 'center',
+                    }}
                 >
-                  {inviteStatus.message}
-                </p>
-              )}
-            </div>
+                  <input
+                      type="email"
+                      placeholder="Roommate's email"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                  />
+                  <button className="btn-primary" onClick={handleInvite}>
+                    Invite
+                  </button>
+                  <button className="btn-ghost" onClick={handleCancelInvite}>
+                    Cancel
+                  </button>
+                  {inviteStatus && (
+                      <p
+                          className={
+                            inviteStatus.type === 'success'
+                                ? 'status-success'
+                                : 'status-error'
+                          }
+                          style={{ margin: 0 }}
+                      >
+                        {inviteStatus.message}
+                      </p>
+                  )}
+                </div>
+              </div>
           )}
 
           <ul className="team-list">
