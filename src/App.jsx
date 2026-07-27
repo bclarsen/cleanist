@@ -8,6 +8,7 @@ import {
   where,
   updateDoc,
   doc,
+  setDoc,
   arrayUnion,
   getDocs,
 } from 'firebase/firestore';
@@ -47,6 +48,7 @@ function App() {
   const [filterAssignee, setFilterAssignee] = useState('All');
   const [filterDate, setFilterDate] = useState('All');
   const [activeTab, setActiveTab] = useState('tasks');
+  const [usersMap, setUsersMap] = useState({});
 
   const [workspace, setWorkspace] = useState('personal');
 
@@ -68,9 +70,20 @@ function App() {
   }, [workspace]);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (currentUser) => {
+    const unsub = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       setAuthLoading(false);
+      if (currentUser) {
+        await setDoc(
+            doc(db, 'users', currentUser.uid),
+            {
+              displayName: currentUser.displayName,
+              email: currentUser.email,
+              photoURL: currentUser.photoURL,
+            },
+            { merge: true },
+        );
+      }
     });
     return unsub;
   }, []);
@@ -119,6 +132,17 @@ function App() {
     });
     return unsub;
   }, [user]);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'users'), (snapshot) => {
+      const map = {};
+      snapshot.docs.forEach((d) => {
+        map[d.id] = d.data();
+      });
+      setUsersMap(map);
+    });
+    return unsub;
+  }, []);
 
   if (authLoading) return <div>Loading...</div>;
   if (!user) return <Login />;
@@ -194,6 +218,7 @@ function App() {
       <Header
         user={user}
         teamMembers={teamMembers}
+        usersMap={usersMap}
         allAssignees={allAssignees}
         workspace={workspace}
         setWorkspace={setWorkspace}

@@ -17,7 +17,7 @@ import {
 const teamsRef = collection(db, 'teams');
 const invitesRef = collection(db, 'teamInvites');
 
-function Header({ user, teamMembers, allAssignees, workspace, setWorkspace }) {
+function Header({ user, teamMembers, allAssignees, usersMap, workspace, setWorkspace }) {
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteStatus, setInviteStatus] = useState(null);
@@ -87,6 +87,24 @@ function Header({ user, teamMembers, allAssignees, workspace, setWorkspace }) {
       });
     } catch (err) {
       console.error('Error removing member:', err);
+    }
+  };
+
+  const handleLeaveTeam = async () => {
+    if (workspace === 'personal' || !currentTeam) return;
+    if (isCreator) return; // creators use Delete Team instead
+
+    const confirmed = window.confirm(`Leave "${currentTeam.name}"?`);
+    if (!confirmed) return;
+
+    try {
+      await updateDoc(doc(db, 'teams', workspace), {
+        members: arrayRemove(user.uid),
+      });
+      setWorkspace('personal');
+      setShowManageMenu(false);
+    } catch (err) {
+      console.error('Error leaving team:', err);
     }
   };
 
@@ -254,6 +272,23 @@ function Header({ user, teamMembers, allAssignees, workspace, setWorkspace }) {
                         Delete team
                       </button>
                     )}
+
+                    {!isCreator && (
+                        <button
+                            style={{
+                              display: 'block',
+                              width: '100%',
+                              textAlign: 'left',
+                              padding: '10px 14px',
+                              border: 'none',
+                              background: 'transparent',
+                              color: 'var(--priority-high, #b45309)',
+                            }}
+                            onClick={handleLeaveTeam}
+                        >
+                          Leave team
+                        </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -281,10 +316,10 @@ function Header({ user, teamMembers, allAssignees, workspace, setWorkspace }) {
               <div style={{ marginTop: '15px' }}>
                 <ul className="team-list">
                   {(currentTeam?.members || []).map((uid) => {
-                    const member = allAssignees.find((a) => a.uid === uid);
+                    const member = usersMap[uid];
                     return (
                         <li key={uid} className="team-member">
-                          {member?.name || uid} {uid === user.uid && '(you)'}
+                          {member?.displayName || (uid === user.uid ? (user.displayName || 'You') : uid)}
                           {isCreator && uid !== user.uid && (
                               <button
                                   className="btn-delete"
