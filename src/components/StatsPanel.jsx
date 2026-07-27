@@ -1,6 +1,6 @@
 import { isOverdue } from '../utils/dateHelpers';
 
-function StatsPanel({ tasks, allAssignees, currentUser }) {
+function StatsPanel({ tasks, currentUser }) {
   const totalTasks = tasks.length;
   const totalCompletions = tasks.reduce((sum, t) => sum + (t.completionHistory?.length || 0), 0);
 
@@ -24,6 +24,7 @@ function StatsPanel({ tasks, allAssignees, currentUser }) {
   });
 
   // Tasks done in last 7 days
+  // eslint-disable-next-line react-hooks/purity
   const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
   const recentCompletions = tasks.flatMap(t =>
     (t.completionHistory || [])

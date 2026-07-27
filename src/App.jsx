@@ -1,4 +1,3 @@
-import './App.css';
 import { useState, useEffect } from 'react';
 import { isOverdue } from './utils/dateHelpers';
 import {
@@ -9,6 +8,7 @@ import {
   updateDoc,
   doc,
   setDoc,
+  getDoc,
   arrayUnion,
   getDocs,
 } from 'firebase/firestore';
@@ -21,9 +21,11 @@ import TaskForm from './components/TaskForm';
 import TaskList from './components/TaskList';
 import StatsPanel from './components/StatsPanel';
 import LivingSpace from './components/LivingSpace';
+import ProfileSetup from './components/ProfileSetup';
 
 const tasksRef = collection(db, 'tasks');
 const invitesRef = collection(db, 'teamInvites');
+const teamsRef = collection(db, 'teams');
 
 const DEFAULT_ROOMS = ['Kitchen', 'Bathroom', 'Living Room', 'Bedroom', 'Other'];
 const FILTER_PRIORITIES = [
@@ -41,6 +43,7 @@ const FILTER_DATE_OPTIONS = [
 function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [needsProfileSetup, setNeedsProfileSetup] = useState(false);
   const [tasks, setTasks] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
   const [filterRoom, setFilterRoom] = useState('All');
@@ -51,6 +54,7 @@ function App() {
   const [usersMap, setUsersMap] = useState({});
 
   const [workspace, setWorkspace] = useState('personal');
+  const [teams, setTeams] = useState([{ id: 'personal', name: 'Personal' }]);
 
   // New: filter menu UI state
   const [showFilterMenu, setShowFilterMenu] = useState(false);
@@ -71,22 +75,48 @@ function App() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      setAuthLoading(false);
       if (currentUser) {
+        // Check if the user has already completed their profile setup
+        const userDocSnap = await getDoc(doc(db, 'users', currentUser.uid));
+        const profileComplete = userDocSnap.exists() && userDocSnap.data().profileComplete;
+
+        if (!profileComplete) {
+          // First time: show profile setup before entering the app
+          setUser(currentUser);
+          setNeedsProfileSetup(true);
+          setAuthLoading(false);
+          return;
+        }
+
+        // Returning user: refresh email/photo in case they changed
         await setDoc(
-            doc(db, 'users', currentUser.uid),
-            {
-              displayName: currentUser.displayName,
-              email: currentUser.email,
-              photoURL: currentUser.photoURL,
-            },
-            { merge: true },
+          doc(db, 'users', currentUser.uid),
+          {
+            email: currentUser.email,
+            photoURL: currentUser.photoURL,
+          },
+          { merge: true },
         );
       }
+      setUser(currentUser);
+      setNeedsProfileSetup(false);
+      setAuthLoading(false);
     });
     return unsub;
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const q = query(teamsRef, where('members', 'array-contains', user.uid));
+    const unsub = onSnapshot(q, (snapshot) => {
+      const fetchedTeams = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
+      setTeams([{ id: 'personal', name: 'Personal' }, ...fetchedTeams]);
+    });
+    return unsub;
+  }, [user]);
 
   useEffect(() => {
     if (!user?.email) return;
@@ -146,14 +176,54 @@ function App() {
 
   if (authLoading) return <div>Loading...</div>;
   if (!user) return <Login />;
+  if (needsProfileSetup) return (
+    <ProfileSetup
+      user={user}
+      onComplete={(displayName) => {
+        // Update the local user object's displayName so the rest of the app sees it immediately
+        setUser((prev) => ({ ...prev, displayName }));
+        setNeedsProfileSetup(false);
+      }}
+    />
+  );
 
-  const allAssignees = [
-    { uid: user.uid, name: user.displayName || 'You' },
-    ...teamMembers.map((m) => ({
-      uid: m.inviteeEmail,
-      name: m.inviteeName || m.inviteeEmail,
-    })),
-  ];
+  const activeTeam = teams.find((t) => t.id === workspace);
+
+  const allAssignees = [];
+  if (workspace === 'personal') {
+    allAssignees.push({
+      uid: user.uid,
+      name: user.displayName || 'You',
+      photoURL: user.photoURL,
+      email: user.email,
+    });
+  } else if (activeTeam) {
+    // Add active members from the current team
+    (activeTeam.members || []).forEach((uid) => {
+      const u = usersMap[uid];
+      allAssignees.push({
+        uid: uid,
+        name: u?.displayName || (uid === user.uid ? (user.displayName || 'You') : u?.email || 'Unknown Roommate'),
+        photoURL: u?.photoURL,
+        email: u?.email,
+      });
+    });
+
+    // Add pending invites for the current team
+    const pendingInvites = teamMembers.filter(
+      (m) => m.teamId === workspace && m.status === 'pending'
+    );
+    pendingInvites.forEach((invite) => {
+      const isAlreadyMember = allAssignees.some((a) => a.email === invite.inviteeEmail || a.uid === invite.inviteeEmail);
+      if (!isAlreadyMember) {
+        allAssignees.push({
+          uid: invite.inviteeEmail,
+          name: invite.inviteeName || invite.inviteeEmail,
+          isPending: true,
+        });
+      }
+    });
+  }
 
   let filteredTasks = tasks;
   if (filterRoom !== 'All')
@@ -217,12 +287,47 @@ function App() {
     <div className="app">
       <Header
         user={user}
-        teamMembers={teamMembers}
         usersMap={usersMap}
-        allAssignees={allAssignees}
         workspace={workspace}
         setWorkspace={setWorkspace}
+        teams={teams}
       />
+
+      <div className="workspace-banner">
+        <div className="workspace-details">
+          <span className="workspace-label">Workspace</span>
+          <h2 className="workspace-title-text">
+            {workspace === 'personal' ? '🏠 Personal Tasks' : `👥 ${activeTeam?.name || 'Loading Team...'}`}
+          </h2>
+        </div>
+        
+        {workspace !== 'personal' && allAssignees.length > 0 && (
+          <div className="workspace-members">
+            <span className="members-label">Roommates:</span>
+            <div className="members-list">
+              {allAssignees.map((assignee) => (
+                <div 
+                  key={assignee.uid} 
+                  className={`member-avatar-chip ${assignee.isPending ? 'pending' : ''}`}
+                  title={`${assignee.name}${assignee.isPending ? ' (Pending Invite)' : ''}`}
+                >
+                  {assignee.photoURL ? (
+                    <img src={assignee.photoURL} alt="" className="avatar-sm" />
+                  ) : (
+                    <div className="avatar-sm placeholder">
+                      {assignee.name?.[0] || '?'}
+                    </div>
+                  )}
+                  <span className="member-name-tag">
+                    {assignee.name}
+                  </span>
+                  {assignee.isPending && <span className="pending-indicator">Pending</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       <nav className="tab-nav">
         <button
@@ -443,7 +548,6 @@ function App() {
       {activeTab === 'stats' && (
         <StatsPanel
           tasks={tasks}
-          allAssignees={allAssignees}
           currentUser={user}
         />
       )}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import {
@@ -7,9 +7,6 @@ import {
   deleteDoc,
   doc,
   updateDoc,
-  query,
-  where,
-  onSnapshot,
   serverTimestamp,
   arrayRemove
 } from 'firebase/firestore';
@@ -17,46 +14,25 @@ import {
 const teamsRef = collection(db, 'teams');
 const invitesRef = collection(db, 'teamInvites');
 
-function Header({ user, teamMembers, allAssignees, usersMap, workspace, setWorkspace }) {
+function Header({ user, usersMap, workspace, setWorkspace, teams }) {
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteStatus, setInviteStatus] = useState(null);
 
-  const [teams, setTeams] = useState([{ id: 'personal', name: 'Personal' }]);
   const [isNamingTeam, setIsNamingTeam] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
 
   const [showManageMenu, setShowManageMenu] = useState(false);
   const [showAddMembers, setShowAddMembers] = useState(false);
 
-  useEffect(() => {
-    if (!user) return;
-    const q = query(teamsRef, where('members', 'array-contains', user.uid));
-    const unsub = onSnapshot(q, (snapshot) => {
-      const fetchedTeams = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      }));
-      setTeams([{ id: 'personal', name: 'Personal' }, ...fetchedTeams]);
-    });
-    return unsub;
-  }, [user]);
-
-  useEffect(() => {
+  const handleWorkspaceChange = (teamId) => {
+    setWorkspace(teamId);
     setShowManageMenu(false);
     setShowAddMembers(false);
     setInviteStatus(null);
-  }, [workspace]);
-
-  const getInitials = (name) => {
-    if (!name) return '?';
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
   };
+
+
 
   const currentTeam = teams.find((t) => t.id === workspace);
   const isCreator = currentTeam?.createdBy === user.uid;
@@ -200,7 +176,7 @@ function Header({ user, teamMembers, allAssignees, usersMap, workspace, setWorks
                   className={
                     workspace === team.id ? 'btn-primary' : 'btn-ghost'
                   }
-                  onClick={() => setWorkspace(team.id)}
+                  onClick={() => handleWorkspaceChange(team.id)}
                 >
                   {team.name}
                 </button>
