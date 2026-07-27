@@ -3,7 +3,7 @@ import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 const tasksRef = collection(db, 'tasks');
-const ROOMS = ['Kitchen', 'Bathroom', 'Living Room', 'Bedroom', 'Other'];
+
 const FREQUENCIES = [
   { value: 'once', label: 'One-time' },
   { value: 'daily', label: 'Daily' },

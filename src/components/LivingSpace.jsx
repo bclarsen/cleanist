@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { doc, setDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, setDoc, arrayRemove } from 'firebase/firestore';
 import { db } from '../firebase';
 
 function LivingSpace({ rooms, workspace }) {
