@@ -23,6 +23,9 @@ export function getNextDue(lastCompleted, frequency) {
 
 // isOverdue: single source of truth for overdue logic
 export function isOverdue(task) {
+  // A completed one-time task is never overdue
+  if (task.frequency === 'once' && task.lastCompleted) return false;
+
   if (task.dueDate) return new Date(task.dueDate) < new Date();
   if (task.lastCompleted && task.frequency !== 'once') {
     const next = getNextDue(task.lastCompleted, task.frequency);
@@ -42,4 +45,9 @@ export function getNextDueLabel(lastCompleted, frequency) {
   const now = new Date();
   if (next < now) return 'Overdue!';
   return `Due: ${next.toLocaleDateString()}`;
+}
+
+export function isRecentlyCompleted(task, hours = 24) {
+  if (!task.lastCompleted) return false;
+  return Date.now() - task.lastCompleted < hours * 60 * 60 * 1000;
 }

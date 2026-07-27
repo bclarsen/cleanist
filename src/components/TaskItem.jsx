@@ -34,6 +34,7 @@ function TaskItem({ task, currentUser, allAssignees = [] }) {
         completedAt: now,
         completedBy: currentUser.uid,
         completedByName: currentUser.displayName,
+        dueAt: task.dueDate || null, // snapshot due date for permanent history
       }),
     });
   };
@@ -96,8 +97,8 @@ function TaskItem({ task, currentUser, allAssignees = [] }) {
                 📅 {new Date(task.dueDate).toLocaleDateString()}
               </span>
             )}
-            {overdue && !task.dueDate && (
-              <span className="overdue-badge">Overdue</span>
+            {overdue && (
+                <span className="overdue-badge">❗ Overdue</span>
             )}
 
             <button
