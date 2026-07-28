@@ -687,76 +687,6 @@ input:focus, select:focus {
 .profile-setup-note  { font-size: 12px; color: var(--text-muted); margin: 20px 0 0; }
 .profile-setup-note strong { color: var(--teal-dark); }
 
-/* ══════════════════════════════════════════════════════════
-   FILTERS DROPDOWN
-   ══════════════════════════════════════════════════════════ */
-.filters { padding: 0 24px 16px; }
-
-/* ══════════════════════════════════════════════════════════
-   TEAM / WORKSPACE UI (create-team-form etc.)
-   ══════════════════════════════════════════════════════════ */
-.create-team-form { display: flex; gap: 8px; }
-.workspace-toggle { display: flex; flex-wrap: wrap; gap: 8px; }
-
-/* ══════════════════════════════════════════════════════════
-   RESPONSIVE
-   ══════════════════════════════════════════════════════════ */
-@media (max-width: 640px) {
-  .stats-cards  { grid-template-columns: repeat(2, 1fr); }
-  .stats-grid   { grid-template-columns: 1fr; }
-  .form-row     { flex-direction: column; }
-  .header-actions { gap: 8px; }
-  .task-list    { padding: 0 16px; }
-  .stats-panel  { padding: 16px; }
-  .workspace-banner { margin: 12px 16px 16px; padding: 12px 16px; }
-  .task-form-container { padding: 0 16px; }
-  .inventory-panel, .living-space-panel { padding: 0 16px; }
-  .app-shell { flex-direction: column; }
-
-  .sidebar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    top: auto;
-    height: auto;
-    width: 100%;
-    flex-direction: row;
-    align-items: center;
-    border-right: none;
-    border-top: 1px solid var(--border);
-    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
-    z-index: 30;
-  }
-
-  .sidebar-brand,
-  .sidebar-footer {
-    display: none; /* hide branding + account row, keep just the tab bar */
-  }
-
-  .sidebar-nav {
-    flex-direction: row;
-    justify-content: space-around;
-    width: 100%;
-  }
-
-  .sidebar-tab {
-    flex-direction: column;
-    gap: 2px;
-    font-size: 11px;
-    padding: 6px 4px;
-    text-align: center;
-  }
-
-  .app-content { padding-bottom: 76px; }
-}
-
-@media (max-width: 480px) {
-  .profile-setup-card { padding: 36px 24px; }
-  .profile-name-row   { flex-direction: column; }
-  .tab { font-size: 14px; }
-}
-
 /* ── App Shell / Sidebar ── */
 .app-shell {
   display: flex;
@@ -846,3 +776,75 @@ input:focus, select:focus {
   flex: 1;
   padding-bottom: 40px;
 }
+
+
+/* ══════════════════════════════════════════════════════════
+   FILTERS DROPDOWN
+   ══════════════════════════════════════════════════════════ */
+.filters { padding: 0 24px 16px; }
+
+/* ══════════════════════════════════════════════════════════
+   TEAM / WORKSPACE UI (create-team-form etc.)
+   ══════════════════════════════════════════════════════════ */
+.create-team-form { display: flex; gap: 8px; }
+.workspace-toggle { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .stats-cards  { grid-template-columns: repeat(2, 1fr); }
+  .stats-grid   { grid-template-columns: 1fr; }
+  .form-row     { flex-direction: column; }
+  .header-actions { gap: 8px; }
+  .task-list    { padding: 0 16px; }
+  .stats-panel  { padding: 16px; }
+  .workspace-banner { margin: 12px 16px 16px; padding: 12px 16px; }
+  .task-form-container { padding: 0 16px; }
+  .inventory-panel, .living-space-panel { padding: 0 16px; }
+  .app-shell { flex-direction: column; }
+
+  .sidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    height: auto;
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    z-index: 30;
+  }
+
+  .sidebar-brand,
+  .sidebar-footer {
+    display: none; /* hide branding + account row, keep just the tab bar */
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    justify-content: space-around;
+    width: 100%;
+  }
+
+  .sidebar-tab {
+    flex-direction: column;
+    gap: 2px;
+    font-size: 11px;
+    padding: 6px 4px;
+    text-align: center;
+  }
+
+  .app-content { padding-bottom: 76px; }
+}
+
+@media (max-width: 480px) {
+  .profile-setup-card { padding: 36px 24px; }
+  .profile-name-row   { flex-direction: column; }
+  .tab { font-size: 14px; }
+}
+
