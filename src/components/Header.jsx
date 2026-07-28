@@ -138,19 +138,12 @@ function Header({ user, usersMap, workspace, setWorkspace, teams }) {
   return (
     <>
       <header className="app-header">
-        <div className="header-title">
-          <img src="/Cleanist_Logo.png" alt="Cleanist Logo" className="header-logo" />
-          <h1>Cleanist</h1>
-        </div>
         <div className="header-actions">
           <button
             className="btn-pill-outline"
             onClick={() => setShowInvite(!showInvite)}
           >
             Teams
-          </button>
-          <button className="btn-pill-outline" onClick={() => signOut(auth)}>
-            Sign Out
           </button>
         </div>
       </header>
