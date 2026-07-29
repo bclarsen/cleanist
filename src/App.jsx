@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { isOverdue } from './utils/dateHelpers';
+import { getWorkspaceDocId } from "./utils/workspaceHelpers.js";
 import {
   collection,
   onSnapshot,
@@ -63,16 +64,18 @@ function App() {
 
   const [rooms, setRooms] = useState(DEFAULT_ROOMS);
   useEffect(() => {
-    if (!workspace) return;
-    const unsub = onSnapshot(doc(db, 'workspaces', workspace), (docSnap) => {
-      if (docSnap.exists() && docSnap.data().rooms) {
-        setRooms(docSnap.data().rooms);
-      } else {
-        setRooms(DEFAULT_ROOMS);
-      }
-    });
+    if (!user || !workspace) return;
+    const q = workspace === 'personal'
+        ? query(tasksRef, where('workspace', '==', 'personal'), where('ownerUid', '==', user.uid))
+        : query(tasksRef, where('workspace', '==', workspace));
+
+    const unsub = onSnapshot(
+        q,
+        (snapshot) => setTasks(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))),
+        (err) => console.error('Error fetching tasks:', err)
+    );
     return unsub;
-  }, [workspace]);
+  }, [user, workspace]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (currentUser) => {
@@ -157,12 +160,18 @@ function App() {
   }, [user]);
 
   useEffect(() => {
-    if (!user) return;
-    const unsub = onSnapshot(invitesRef, (snapshot) => {
-      setTeamMembers(snapshot.docs.map((d) => ({id: d.id, ...d.data()})));
-    });
+    if (!user || !workspace || workspace === 'personal') {
+      setTeamMembers([]);
+      return;
+    }
+    const q = query(invitesRef, where('teamId', '==', workspace));
+    const unsub = onSnapshot(
+        q,
+        (snapshot) => setTeamMembers(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))),
+        (err) => console.error('Error fetching invites:', err)
+    );
     return unsub;
-  }, [user]);
+  }, [user, workspace]);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'users'), (snapshot) => {
@@ -259,10 +268,12 @@ function App() {
     });
   }
 
-  const workspaceTasks = filteredTasks.filter(
-      (t) =>
-          t.workspace === workspace || (workspace === 'personal' && !t.workspace),
-  );
+  const workspaceTasks = filteredTasks.filter((t) => {
+    if (workspace === 'personal') {
+      return (t.workspace === 'personal' || !t.workspace) && t.ownerUid === user.uid;
+    }
+    return t.workspace === workspace;
+  });
 
   const activeFilterCount = [
     filterDate !== 'All',
@@ -515,7 +526,7 @@ function App() {
             )}
 
             {activeTab === 'living-space' && (
-                <LivingSpace rooms={rooms} workspace={workspace}/>
+                <LivingSpace rooms={rooms} workspace={getWorkspaceDocId(workspace, user.uid)} />
             )}
 
             {activeTab === 'stats' && (

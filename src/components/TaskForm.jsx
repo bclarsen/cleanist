@@ -39,6 +39,7 @@ function TaskForm({ user, allAssignees = [], workspace, rooms = ['Kitchen', 'Bat
       lastCompleted: null,
       completionHistory: [],
       workspace: workspace, // Ensures task is tagged with the current workspace ID
+      ownerUid: workspace == 'personal' ? user.uid : null
     });
     setName('');
     setNotes('');
