@@ -163,6 +163,53 @@ body { margin: 0; }
 .status-success { color: var(--accent-text); font-size: var(--text-sm); margin: 8px 0 0; font-weight: 600; }
 .status-error   { color: var(--priority-high); font-size: var(--text-sm); margin: 8px 0 0; font-weight: 600; }
 
+/* ── Invite Banner (pending team invites) ───────────────── */
+.invite-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 16px 24px 0;
+  padding: 14px 18px;
+  background: var(--teal-faint);
+  border: 1px solid var(--teal-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  animation: slideDown var(--t-med) both;
+}
+
+.invite-banner-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.invite-banner-text {
+  flex: 1;
+  font-size: var(--text-sm);
+  color: var(--text-main);
+  line-height: 1.4;
+}
+
+.invite-banner-text strong {
+  color: var(--teal-dark);
+}
+
+.invite-banner-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .invite-banner {
+    margin: 12px 16px 0;
+    flex-wrap: wrap;
+  }
+  .invite-banner-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
 /* ── Workspace Banner ────────────────────────────────────── */
 .workspace-banner {
   margin: 16px 24px 20px;
@@ -224,6 +271,29 @@ body { margin: 0; }
   background: var(--priority-med-bg); color: #d97706;
   padding: 1px 4px; border-radius: 4px;
 }
+
+/* ── Error Boundary ──────────────────────────────────────── */
+.error-boundary {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 20px;
+}
+.error-boundary-card {
+  text-align: center;
+  padding: 48px 40px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--bg-card);
+  max-width: 400px;
+  width: 100%;
+  box-shadow: var(--shadow-md);
+}
+.error-boundary-icon { font-size: 44px; margin-bottom: 12px; }
+.error-boundary-card h1 { font-size: 22px; font-weight: 800; color: var(--teal-dark); margin: 0 0 10px; }
+.error-boundary-card p { color: var(--text-muted); margin: 0 0 24px; font-size: 14px; line-height: 1.6; }
 
 /* ══════════════════════════════════════════════════════════
    NAVIGATION TABS

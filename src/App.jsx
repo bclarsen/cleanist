@@ -122,34 +122,7 @@ function App() {
     return unsub;
   }, [user]);
 
-  useEffect(() => {
-    if (!user?.email) return;
 
-    const acceptInvites = async () => {
-      const q = query(
-          invitesRef,
-          where('inviteeEmail', '==', user.email.toLowerCase()),
-          where('status', '==', 'pending'),
-      );
-      const snapshot = await getDocs(q);
-
-      for (const inviteDoc of snapshot.docs) {
-        const invite = inviteDoc.data();
-        try {
-          await updateDoc(doc(db, 'teams', invite.teamId), {
-            members: arrayUnion(user.uid),
-          });
-          await updateDoc(doc(db, 'teamInvites', inviteDoc.id), {
-            status: 'accepted',
-          });
-        } catch (err) {
-          console.error('Error accepting invite:', invite, err);
-        }
-      }
-    };
-
-    acceptInvites();
-  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -199,6 +172,10 @@ function App() {
 
   const activeTeam = teams.find((t) => t.id === workspace);
 
+  const myPendingInvites = teamMembers.filter(
+      (inv) => inv.inviteeEmail === user.email?.toLowerCase() && inv.status === 'pending'
+  );
+
   const allAssignees = [];
   if (workspace === 'personal') {
     allAssignees.push({
@@ -234,6 +211,30 @@ function App() {
       }
     });
   }
+
+  const handleAcceptInvite = async (invite) => {
+    try {
+      await updateDoc(doc(db, 'teams', invite.teamId), {
+        members: arrayUnion(user.uid),
+      });
+      await updateDoc(doc(db, 'teamInvites', invite.id), {
+        status: 'accepted',
+      });
+      setWorkspace(invite.teamId);
+    } catch (err) {
+      console.error('Error accepting invite:', err);
+    }
+  };
+
+  const handleDeclineInvite = async (invite) => {
+    try {
+      await updateDoc(doc(db, 'teamInvites', invite.id), {
+        status: 'declined',
+      });
+    } catch (err) {
+      console.error('Error declining invite:', err);
+    }
+  };
 
   let filteredTasks = tasks;
   if (filterRoom !== 'All')
@@ -306,6 +307,16 @@ function App() {
               setWorkspace={setWorkspace}
               teams={teams}
           />
+
+          {myPendingInvites.map((invite) => (
+              <InviteBanner
+                  key={invite.id}
+                  invite={invite}
+                  inviterName={usersMap[invite.inviterUid]?.displayName || 'Someone'}
+                  onAccept={() => handleAcceptInvite(invite)}
+                  onDecline={() => handleDeclineInvite(invite)}
+              />
+          ))}
 
           <div className="workspace-banner">
             <div className="workspace-details">
