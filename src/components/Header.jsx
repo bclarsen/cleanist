@@ -88,6 +88,19 @@ function Header({ user, usersMap, workspace, setWorkspace, teams }) {
     if (!inviteEmail.trim() || workspace === 'personal') return;
     if (!currentTeam) return;
 
+    const normalizedEmail = inviteEmail.trim().toLowerCase();
+    const alreadyMember = (currentTeam.members || []).some(
+        (uid) => usersMap[uid]?.email?.toLowerCase() === normalizedEmail
+    );
+
+    if (alreadyMember) {
+      setInviteStatus({
+        type: 'error',
+        message: 'This person is already on the team.',
+      });
+      return;
+    }
+
     try {
       await addDoc(invitesRef, {
         teamId: workspace,
