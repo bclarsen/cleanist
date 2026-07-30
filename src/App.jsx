@@ -24,6 +24,9 @@ import StatsPanel from './components/StatsPanel';
 import LivingSpace from './components/LivingSpace';
 import ProfileSetup from './components/ProfileSetup';
 import Sidebar from './components/Sidebar';
+import UserProfile from './components/UserProfile';
+import Preferences from './components/Preferences';
+import InviteBanner from './components/InviteBanner';
 
 const tasksRef = collection(db, 'tasks');
 const invitesRef = collection(db, 'teamInvites');
@@ -306,6 +309,8 @@ function App() {
               workspace={workspace}
               setWorkspace={setWorkspace}
               teams={teams}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
           />
 
           {myPendingInvites.map((invite) => (
@@ -355,6 +360,8 @@ function App() {
           </div>
 
           <main className="app-content">
+            {activeTab === 'profile' && <UserProfile user={user} />}
+            {activeTab === 'preferences' && <Preferences user={user} />}
             {activeTab === 'tasks' && (
                 <>
                   <TaskForm

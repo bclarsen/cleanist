@@ -14,7 +14,7 @@ import {
 const teamsRef = collection(db, 'teams');
 const invitesRef = collection(db, 'teamInvites');
 
-function Header({ user, usersMap, workspace, setWorkspace, teams }) {
+function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, setActiveTab }) {
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteStatus, setInviteStatus] = useState(null);
@@ -24,6 +24,8 @@ function Header({ user, usersMap, workspace, setWorkspace, teams }) {
 
   const [showManageMenu, setShowManageMenu] = useState(false);
   const [showAddMembers, setShowAddMembers] = useState(false);
+
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
 
   const handleWorkspaceChange = (teamId) => {
     setWorkspace(teamId);
@@ -158,6 +160,29 @@ function Header({ user, usersMap, workspace, setWorkspace, teams }) {
           >
             Teams
           </button>
+          <div style={{ position: 'relative' }}>
+            <button
+                className="btn-icon-settings"
+                onClick={() => setShowSettingsMenu(!showSettingsMenu)}
+                title="Settings"
+            >
+              ⚙️
+            </button>
+
+            {showSettingsMenu && (
+                <div className="settings-dropdown">
+                  <button onClick={() => { setActiveTab('profile'); setShowSettingsMenu(false); }}>
+                    User Profile
+                  </button>
+                  <button onClick={() => { setActiveTab('preferences'); setShowSettingsMenu(false); }}>
+                    Preferences
+                  </button>
+                  <button onClick={() => signOut(auth)} className="danger">
+                    Sign Out
+                  </button>
+                </div>
+            )}
+          </div>
         </div>
       </header>
 

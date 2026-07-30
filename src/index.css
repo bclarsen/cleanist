@@ -271,6 +271,49 @@ body { margin: 0; }
   background: var(--priority-med-bg); color: #d97706;
   padding: 1px 4px; border-radius: 4px;
 }
+/* ── Settings Icon ──────────────────────────────────────── */
+
+.btn-icon-settings {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  color: var(--teal-dark);
+}
+.btn-icon-settings:hover { background: var(--bg-subtle); }
+
+.settings-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  min-width: 180px;
+  z-index: 20;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.settings-dropdown button {
+  text-align: left;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  font-weight: 600;
+  color: var(--text-main);
+}
+.settings-dropdown button:hover { background: var(--bg-subtle); }
+.settings-dropdown button.danger { color: var(--priority-high); }
+
+.avatar-lg {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  object-fit: cover;
+}
 
 /* ── Error Boundary ──────────────────────────────────────── */
 .error-boundary {
