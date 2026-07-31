@@ -338,6 +338,22 @@ body { margin: 0; }
 .error-boundary-card h1 { font-size: 22px; font-weight: 800; color: var(--teal-dark); margin: 0 0 10px; }
 .error-boundary-card p { color: var(--text-muted); margin: 0 0 24px; font-size: 14px; line-height: 1.6; }
 
+
+/* ── User Profile Avatar ──────────────────────────────────────── */
+
+.avatar-lg.placeholder {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--teal-main);
+  color: white;
+  font-size: 32px;
+  font-weight: 700;
+}
+
 /* ══════════════════════════════════════════════════════════
    NAVIGATION TABS
    ══════════════════════════════════════════════════════════ */
