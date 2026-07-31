@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { isOverdue } from './utils/dateHelpers';
 import { getWorkspaceDocId } from "./utils/workspaceHelpers.js";
+import { useClickOutside } from './hooks/useClickOutside';
 import {
   collection,
   onSnapshot,
@@ -27,6 +28,7 @@ import Sidebar from './components/Sidebar';
 import UserProfile from './components/UserProfile';
 import Preferences from './components/Preferences';
 import InviteBanner from './components/InviteBanner';
+
 
 const tasksRef = collection(db, 'tasks');
 const invitesRef = collection(db, 'teamInvites');
@@ -64,6 +66,7 @@ function App() {
   // New: filter menu UI state
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [expandedFilterType, setExpandedFilterType] = useState(null);
+  const filterMenuRef = useClickOutside(() => setShowFilterMenu(false));
 
   const [rooms, setRooms] = useState(DEFAULT_ROOMS);
   useEffect(() => {
@@ -323,6 +326,7 @@ function App() {
               />
           ))}
 
+          {activeTab !== 'profile' && activeTab !== 'preferences' && (
           <div className="workspace-banner">
             <div className="workspace-details">
               <span className="workspace-label">Workspace</span>
@@ -358,6 +362,7 @@ function App() {
                 </div>
             )}
           </div>
+          )}
 
           <main className="app-content">
             {activeTab === 'profile' && <UserProfile user={user} />}
@@ -372,7 +377,7 @@ function App() {
                   />
 
                   <div className="filters" style={{padding: '20px 24px 16px'}}>
-                    <div style={{position: 'relative', display: 'inline-block'}}>
+                    <div style={{position: 'relative', display: 'inline-block'}} ref={filterMenuRef}>
                       <button
                           className="btn-pill-outline"
                           onClick={() => setShowFilterMenu(!showFilterMenu)}

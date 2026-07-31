@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '../firebase';
+import { useClickOutside } from '../hooks/useClickOutside';
 import {
   collection,
   addDoc,
@@ -26,6 +27,9 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
   const [showAddMembers, setShowAddMembers] = useState(false);
 
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const containerRef = useClickOutside(() => setShowInvite(false));
+  const manageMenuRef = useClickOutside(() => setShowManageMenu(false));
+  const settingsMenuRef = useClickOutside(() => setShowSettingsMenu(false));
 
   const handleWorkspaceChange = (teamId) => {
     setWorkspace(teamId);
@@ -151,7 +155,7 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
   };
 
   return (
-    <>
+      <div ref={containerRef}>
       <header className="app-header">
         <div className="header-actions">
           <button
@@ -160,7 +164,7 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
           >
             Teams
           </button>
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative' }} ref={settingsMenuRef}>
             <button
                 className="btn-icon-settings"
                 onClick={() => setShowSettingsMenu(!showSettingsMenu)}
@@ -224,7 +228,7 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
             </div>
 
             {workspace !== 'personal' && (
-              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <div style={{ position: 'relative', flexShrink: 0 }} ref={manageMenuRef}>
                 <button
                   className="btn-pill-outline"
                   onClick={() => setShowManageMenu(!showManageMenu)}
@@ -383,7 +387,7 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
           </ul>
         </div>
       )}
-    </>
+      </div>
   );
 }
 
