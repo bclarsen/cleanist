@@ -10,7 +10,10 @@ import {
   doc,
   updateDoc,
   serverTimestamp,
-  arrayRemove
+  arrayRemove,
+  getDocs,
+  query,
+  where
 } from 'firebase/firestore';
 
 const teamsRef = collection(db, 'teams');
@@ -109,11 +112,26 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
     }
 
     try {
+      // Don't stack duplicate invites — they'd render as repeated banners
+      const existing = await getDocs(query(
+          invitesRef,
+          where('teamId', '==', workspace),
+          where('inviteeEmail', '==', normalizedEmail),
+          where('status', '==', 'pending'),
+      ));
+      if (!existing.empty) {
+        setInviteStatus({
+          type: 'error',
+          message: 'This person already has a pending invite.',
+        });
+        return;
+      }
+
       await addDoc(invitesRef, {
         teamId: workspace,
         teamName: currentTeam.name,
         inviterUid: user.uid,
-        inviteeEmail: inviteEmail.trim().toLowerCase(),
+        inviteeEmail: normalizedEmail,
         status: 'pending',
         createdAt: serverTimestamp(),
       });

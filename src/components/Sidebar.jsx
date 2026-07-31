@@ -11,8 +11,8 @@ function Sidebar({ user, activeTab, setActiveTab }) {
     return (
         <aside className="sidebar">
             <div className="sidebar-brand">
-                <img src="/Cleanist_Logo.png" alt="Cleanist Logo" className="header-logo" />
-                <h1>Cleanist</h1>
+                <img src="/Mop_Logo.png" alt="Mop Logo" className="header-logo" />
+                <h1>Mop</h1>
             </div>
 
             <nav className="sidebar-nav">

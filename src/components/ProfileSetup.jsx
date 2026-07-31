@@ -52,7 +52,7 @@ function ProfileSetup({ user, onComplete }) {
         <div className="profile-setup-icon">
           <Hand size={48} strokeWidth={1.5} />
         </div>
-        <h1 className="profile-setup-title">Welcome to Cleanist!</h1>
+        <h1 className="profile-setup-title">Welcome to Mop!</h1>
         <p className="profile-setup-subtitle">
           Before you dive in, let us know what to call you — your roommates will
           see this name.

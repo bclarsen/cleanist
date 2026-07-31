@@ -28,7 +28,7 @@ class ErrorBoundary extends Component {
                             <AlertTriangle size={40} strokeWidth={1.75} />
                         </div>
                         <h1>Something went wrong</h1>
-                        <p>Cleanist ran into an unexpected error. Try reloading the page.</p>
+                        <p>Mop ran into an unexpected error. Try reloading the page.</p>
                         <button className="btn-primary" onClick={this.handleReload}>
                             Reload
                         </button>

@@ -63,6 +63,7 @@ function App() {
 
   const [workspace, setWorkspace] = useState('personal');
   const [teams, setTeams] = useState([{id: 'personal', name: 'Personal'}]);
+  const [myInvites, setMyInvites] = useState([]);
 
   // New: filter menu UI state
   const [showFilterMenu, setShowFilterMenu] = useState(false);
@@ -132,14 +133,6 @@ function App() {
 
 
   useEffect(() => {
-    if (!user) return;
-    const unsub = onSnapshot(tasksRef, (snapshot) => {
-      setTasks(snapshot.docs.map((d) => ({id: d.id, ...d.data()})));
-    });
-    return unsub;
-  }, [user]);
-
-  useEffect(() => {
     if (!user || !workspace || workspace === 'personal') {
       setTeamMembers([]);
       return;
@@ -152,6 +145,24 @@ function App() {
     );
     return unsub;
   }, [user, workspace]);
+
+  // Invites addressed to me, regardless of which workspace I'm viewing.
+  // Must stay separate from the workspace-scoped listener above: you aren't a
+  // member of the inviting team yet, so it can't surface your own invites.
+  useEffect(() => {
+    if (!user?.email) return;
+    const q = query(
+        invitesRef,
+        where('inviteeEmail', '==', user.email.toLowerCase()),
+        where('status', '==', 'pending'),
+    );
+    const unsub = onSnapshot(
+        q,
+        (snapshot) => setMyInvites(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))),
+        (err) => console.error('Error fetching my invites:', err)
+    );
+    return unsub;
+  }, [user]);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'users'), (snapshot) => {
@@ -179,9 +190,7 @@ function App() {
 
   const activeTeam = teams.find((t) => t.id === workspace);
 
-  const myPendingInvites = teamMembers.filter(
-      (inv) => inv.inviteeEmail === user.email?.toLowerCase() && inv.status === 'pending'
-  );
+  const myPendingInvites = myInvites;
 
   const allAssignees = [];
   if (workspace === 'personal') {
@@ -208,11 +217,15 @@ function App() {
         (m) => m.teamId === workspace && m.status === 'pending'
     );
     pendingInvites.forEach((invite) => {
-      const isAlreadyMember = allAssignees.some((a) => a.email === invite.inviteeEmail || a.uid === invite.inviteeEmail);
+      // inviteeEmail is stored lowercased; member emails come from auth as-is
+      const inviteeEmail = invite.inviteeEmail?.toLowerCase();
+      const isAlreadyMember = allAssignees.some(
+          (a) => a.email?.toLowerCase() === inviteeEmail || a.uid === invite.inviteeEmail
+      );
       if (!isAlreadyMember) {
         allAssignees.push({
           uid: invite.inviteeEmail,
-          name: invite.inviteeName || invite.inviteeEmail,
+          name: invite.inviteeEmail,
           isPending: true,
         });
       }
