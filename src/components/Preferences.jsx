@@ -2,16 +2,132 @@ import { useState } from 'react';
 import { Lock, Users } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import {
+  DEFAULT_COMPLETED_WINDOW_MS,
+  formatDuration,
+  msToParts,
+  partsToMs,
+} from '../utils/dateHelpers';
+
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
+const WEEK_MS = 7 * DAY_MS;
+
+const COMPLETED_PRESETS = [
+  { value: HOUR_MS, label: '1 hour' },
+  { value: DAY_MS, label: '1 day' },
+  { value: WEEK_MS, label: '1 week' },
+];
 
 const DEFAULT_USER_PREFS = {
   emailNotifications: true,
   defaultWorkspace: 'personal',
+  // null, not a number: "follow the team's window". See resolveCompletedWindowMs.
+  completedWindowMs: null,
 };
 
 const DEFAULT_TEAM_PREFS = {
   quietHours: false,
   autoAssign: 'manual',
+  completedWindowMs: DEFAULT_COMPLETED_WINDOW_MS,
 };
+
+/**
+ * How long completed tasks stay visible. Presets cover the common cases; "Custom"
+ * swaps in days/hours/minutes inputs.
+ *
+ * The inputs are local state so a half-typed value ("1 day and 0 hours and…")
+ * doesn't get written on every keystroke — the write happens on Apply.
+ */
+function CompletedWindowControl({ value, allowInherit, disabled, onChange }) {
+  const isPreset = COMPLETED_PRESETS.some((p) => p.value === value);
+  const inherits = allowInherit && (value === null || value === undefined);
+  const [custom, setCustom] = useState(() =>
+    msToParts(value ?? DEFAULT_COMPLETED_WINDOW_MS),
+  );
+  const [showCustom, setShowCustom] = useState(!inherits && !isPreset);
+
+  const selectValue = showCustom
+      ? 'custom'
+      : inherits
+          ? 'inherit'
+          : String(value);
+
+  const handleSelect = (next) => {
+    if (next === 'custom') {
+      setCustom(msToParts(value ?? DEFAULT_COMPLETED_WINDOW_MS));
+      setShowCustom(true);
+      return;
+    }
+    setShowCustom(false);
+    onChange(next === 'inherit' ? null : Number(next));
+  };
+
+  const customMs = partsToMs(custom);
+
+  return (
+      <div className="completed-window-control">
+        <select
+            value={selectValue}
+            disabled={disabled}
+            onChange={(e) => handleSelect(e.target.value)}
+        >
+          {allowInherit && <option value="inherit">Match the team&apos;s setting</option>}
+          {COMPLETED_PRESETS.map((p) => (
+              <option key={p.value} value={p.value}>
+                {p.label}
+              </option>
+          ))}
+          <option value="custom">Custom…</option>
+        </select>
+
+        {showCustom && (
+            <div className="completed-window-custom">
+              <div className="completed-window-fields">
+                {[
+                  { key: 'days', label: 'Days', max: 365 },
+                  { key: 'hours', label: 'Hours', max: 23 },
+                  { key: 'minutes', label: 'Minutes', max: 59 },
+                ].map((field) => (
+                    <label key={field.key}>
+                      <span>{field.label}</span>
+                      <input
+                          type="number"
+                          min="0"
+                          max={field.max}
+                          value={custom[field.key]}
+                          disabled={disabled}
+                          onChange={(e) =>
+                              setCustom((prev) => ({
+                                ...prev,
+                                [field.key]: e.target.value === ''
+                                    ? ''
+                                    : Math.max(0, Number(e.target.value)),
+                              }))
+                          }
+                      />
+                    </label>
+                ))}
+              </div>
+              <div className="completed-window-actions">
+                <button
+                    className="btn-primary"
+                    disabled={disabled || customMs <= 0 || customMs === value}
+                    onClick={() => onChange(customMs)}
+                >
+                  Apply
+                </button>
+                <span className="completed-window-preview">
+                  {customMs > 0
+                      ? `Hides after ${formatDuration(customMs)}`
+                      : 'Pick at least one minute'}
+                </span>
+              </div>
+            </div>
+        )}
+      </div>
+  );
+}
 
 /**
  * Two scopes behind a toggle:
@@ -137,6 +253,27 @@ function Preferences({ user, profile, teams = [], workspace }) {
                 </div>
               </div>
 
+              <h3 className="preference-group-heading">Completed tasks</h3>
+              <div className="preference-list">
+                <div className="preference-row">
+                  <div className="preference-label">
+                    <strong>Task Disappearance Window</strong>
+                    <p>
+                      How long a finished task stays in <strong>Completed</strong> before
+                      it disappears. Only affects your view.
+                    </p>
+                  </div>
+                  <div className="preference-control">
+                    <CompletedWindowControl
+                        value={userPrefs.completedWindowMs}
+                        allowInherit
+                        disabled={savingUser}
+                        onChange={(completedWindowMs) => saveUserPref({ completedWindowMs })}
+                    />
+                  </div>
+                </div>
+              </div>
+
               {userError && <p className="profile-setup-error">{userError}</p>}
 
               <p className="settings-card-note">
@@ -198,6 +335,27 @@ function Preferences({ user, profile, teams = [], workspace }) {
                             <option value="manual">Assign manually</option>
                             <option value="rotate">Rotate between roommates</option>
                           </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <h3 className="preference-group-heading">Completed tasks</h3>
+                    <div className="preference-list">
+                      <div className="preference-row">
+                        <div className="preference-label">
+                          <strong>Task Disappearance Window</strong>
+                          <p>
+                            The household default for how long finished tasks stay in{' '}
+                            <strong>Completed</strong>. Members can override it for
+                            themselves.
+                          </p>
+                        </div>
+                        <div className="preference-control">
+                          <CompletedWindowControl
+                              value={teamPrefs.completedWindowMs}
+                              disabled={!canEditTeam || savingTeam}
+                              onChange={(completedWindowMs) => saveTeamPref({ completedWindowMs })}
+                          />
                         </div>
                       </div>
                     </div>

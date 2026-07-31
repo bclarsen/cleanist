@@ -42,6 +42,7 @@ function TaskForm({
   const [frequency, setFrequency] = useState('weekly');
   const [priority, setPriority] = useState('medium');
   const [dueDate, setDueDate] = useState('');
+  const [dueTime, setDueTime] = useState('');
   const [notes, setNotes] = useState('');
   const [assignedTo, setAssignedTo] = useState(workspace === 'personal' ? user?.uid : '');
 
@@ -69,7 +70,9 @@ function TaskForm({
       room,
       frequency,
       priority,
-      dueDate: dueDate || null,
+      // `YYYY-MM-DDTHH:mm` when a time was given, else the plain `YYYY-MM-DD`
+      // the app has always stored. Time is optional, so both shapes persist.
+      dueDate: dueDate ? (dueTime ? `${dueDate}T${dueTime}` : dueDate) : null,
       assignedTo: resolvedAssignee,
       notes: notes.trim(),
       lastCompleted: null,
@@ -80,6 +83,7 @@ function TaskForm({
     setName('');
     setNotes('');
     setDueDate('');
+    setDueTime('');
     setAssignedTo('');
     setExpanded(false);
   };
@@ -143,8 +147,26 @@ function TaskForm({
               <input
                 type="date"
                 value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
+                onChange={(e) => {
+                  setDueDate(e.target.value);
+                  // A time with no date can't be stored, so drop it if the
+                  // date is cleared.
+                  if (!e.target.value) setDueTime('');
+                }}
               />
+            </div>
+            <div className="form-group">
+              <label>Due Time</label>
+              <input
+                type="time"
+                value={dueTime}
+                // Time alone is meaningless — it only qualifies a date.
+                disabled={!dueDate}
+                onChange={(e) => setDueTime(e.target.value)}
+              />
+              <span className="field-hint">
+                {dueDate ? 'Optional' : 'Pick a date first'}
+              </span>
             </div>
             {workspace !== 'personal' && (
               <div className="form-group">

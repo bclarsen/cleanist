@@ -87,9 +87,11 @@ All flat, top-level, no subcollections:
 - `inventory/{itemId}` — `name`, `quantity`, `workspace`, `addedBy`, `addedByName`
 - `workspaces/{workspaceId}` — `rooms: [string]`; ID comes from `getWorkspaceDocId()`. The doc is created lazily on the first room edit, so treat a missing doc or empty `rooms` as "use `DEFAULT_ROOMS`" — that fallback is why room writes in `LivingSpace` send the full list rather than `arrayRemove`, since there may be nothing persisted to remove from.
 
-`completionHistory` is an append-only array written with `arrayUnion`. Each entry snapshots `completedAt`, `completedBy`, `completedByName`, and `dueAt` so history stays accurate even if the task is later edited. `StatsPanel` derives the entire leaderboard and activity feed from these arrays — never overwrite the array wholesale.
+`completionHistory` is an append-only array written with `arrayUnion`. Each entry snapshots `completedAt`, `completedBy`, `completedByName`, `dueAt`, and `wasLate` so history stays accurate even if the task is later edited. `wasLate` is derived at completion time (`null` when the task had no due date) precisely because `dueAt` alone can't answer it afterwards. `StatsPanel` derives the entire leaderboard and activity feed from these arrays — never overwrite the array wholesale.
 
-Timestamps are inconsistent by collection: `lastCompleted` / `completedAt` are `Date.now()` millisecond numbers, `dueDate` is a `YYYY-MM-DD` string from a date input, `createdAt` is a Firestore `serverTimestamp()`. Check which you're dealing with before comparing.
+Timestamps are inconsistent by collection: `lastCompleted` / `completedAt` are `Date.now()` millisecond numbers, `createdAt` is a Firestore `serverTimestamp()`, and `dueDate` is a string in **one of two shapes** — `YYYY-MM-DD` (no time given) or `YYYY-MM-DDTHH:mm` (time given). Check which you're dealing with before comparing.
+
+**Never parse `dueDate` with `new Date(...)` directly.** `new Date('2026-07-31')` is read as UTC midnight and lands on the previous local day west of Greenwich, while `new Date('2026-07-31T14:00')` is read as local — so the bare constructor is inconsistent between the two shapes. Use `parseDueDate()`, which parses both locally and treats a date-only value as end-of-day (23:59:59.999) so a task due today isn't overdue at 00:01. Use `hasDueTime()` to branch on whether a time was set and `formatDueDate()` to render.
 
 ### Security rules are the real authorization boundary
 
@@ -102,6 +104,8 @@ The Firebase web config in `src/firebase.js` is committed and that's expected fo
 ### Date logic
 
 `src/utils/dateHelpers.js` is the single source of truth for overdue/recurrence. `isOverdue()` handles the tricky cases: a completed one-time task is never overdue; recurring tasks derive their next due date from `lastCompleted` + `frequency`. `getNextDue()` supports `daily`/`weekly`/`biweekly`/`monthly`. Any new overdue check should call these rather than reimplementing the comparison.
+
+Preference-driven durations (the "Completed" window) are stored as a single millisecond number, edited as days/hours/minutes via `msToParts`/`partsToMs`. `resolveCompletedWindowMs(userValue, teamValue)` is the precedence rule: a user's own value wins, `null`/absent means "follow the team", and neither set falls back to `DEFAULT_COMPLETED_WINDOW_MS`. Because `isRecentlyCompleted` reads the clock at render time, `TaskList` runs a 30s ticker so tasks actually leave the Completed section without an unrelated re-render.
 
 Frequency values drift between files: `TaskForm` offers `once`/`daily`/`weekly`/`monthly`, while `dateHelpers` and `TaskItem`'s `FREQ_LABELS` also handle `biweekly`. Keep all three in sync when touching frequencies.
 
@@ -120,7 +124,7 @@ Icons come from `lucide-react`. Emoji were deliberately removed from the UI in f
 Be aware of these before "fixing" what looks broken:
 
 - **The email function is unused.** `functions/sendEmail` is deployed but nothing in `src/` calls it (no `httpsCallable` anywhere), and its `from` address is still the placeholder `noreply@yourdomain.com`, which must be a Resend-verified domain to work.
-- **`Preferences.jsx` is a stub** — local `useState` only, nothing persisted; the component says so itself.
+- **Quiet Hours and Email Notifications persist but do nothing** — there is no reminder delivery anywhere in the app, so both are saved and marked in the UI with `<em>Saved, but reminders aren't sent yet.</em>`. The other preferences (default workspace, task assignment, completed-task window) are wired up and take effect.
 - **`README.md` is still the untouched Vite template** plus a stray `# mop` line.
 
 ## Conventions

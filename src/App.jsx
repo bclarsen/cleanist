@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Home, Users } from 'lucide-react';
-import { isOverdue } from './utils/dateHelpers';
+import { isOverdue, parseDueDate, resolveCompletedWindowMs } from './utils/dateHelpers';
 import { getWorkspaceDocId } from "./utils/workspaceHelpers.js";
 import { useClickOutside } from './hooks/useClickOutside';
 import {
@@ -235,6 +235,12 @@ function App() {
 
   const activeTeam = teams.find((t) => t.id === workspace);
 
+  // Your own window wins; otherwise fall back to the team's shared setting.
+  const completedWindowMs = resolveCompletedWindowMs(
+      usersMap[user.uid]?.preferences?.completedWindowMs,
+      activeTeam?.preferences?.completedWindowMs,
+  );
+
   const myPendingInvites = myInvites;
 
   const allAssignees = [];
@@ -326,7 +332,7 @@ function App() {
       if (filterDate === 'none') return !t.dueDate;
       if (filterDate === 'overdue') return isOverdue(t);
       if (!t.dueDate) return false;
-      const due = new Date(t.dueDate);
+      const due = parseDueDate(t.dueDate);
       if (filterDate === 'today')
         return due >= startOfToday && due < endOfToday;
       if (filterDate === 'week') return due >= startOfToday && due < endOfWeek;
@@ -628,6 +634,7 @@ function App() {
                       tasks={workspaceTasks}
                       currentUser={user}
                       allAssignees={allAssignees}
+                      completedWindowMs={completedWindowMs}
                   />
                 </>
             )}
