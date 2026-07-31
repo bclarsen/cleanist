@@ -16,7 +16,26 @@ const PRIORITIES = [
   { value: 'low', label: 'Low' },
 ];
 
-function TaskForm({ user, allAssignees = [], workspace, rooms = ['Kitchen', 'Bathroom', 'Living Room', 'Bedroom', 'Other'] }) {
+// With the team's autoAssign set to 'rotate', new tasks go to whoever currently
+// holds the fewest — ties broken by assignee order so the result is deterministic.
+function pickRotatedAssignee(allAssignees, tasks) {
+  const eligible = allAssignees.filter((a) => !a.isPending);
+  if (eligible.length === 0) return '';
+  const counts = eligible.map(
+      (a) => tasks.filter((t) => t.assignedTo === a.uid).length,
+  );
+  const fewest = Math.min(...counts);
+  return eligible[counts.indexOf(fewest)].uid;
+}
+
+function TaskForm({
+  user,
+  allAssignees = [],
+  workspace,
+  rooms = ['Kitchen', 'Bathroom', 'Living Room', 'Bedroom', 'Other'],
+  autoAssign = 'manual',
+  tasks = [],
+}) {
   const [expanded, setExpanded] = useState(false);
   const [name, setName] = useState('');
   const [room, setRoom] = useState('Kitchen');
@@ -26,15 +45,32 @@ function TaskForm({ user, allAssignees = [], workspace, rooms = ['Kitchen', 'Bat
   const [notes, setNotes] = useState('');
   const [assignedTo, setAssignedTo] = useState(workspace === 'personal' ? user?.uid : '');
 
+  const isRotating = workspace !== 'personal' && autoAssign === 'rotate';
+  const rotatedAssignee = isRotating
+      ? pickRotatedAssignee(allAssignees, tasks)
+      : '';
+  const rotatedName = allAssignees.find((a) => a.uid === rotatedAssignee)?.name;
+
   const addTask = async () => {
     if (!name.trim()) return;
+
+    let resolvedAssignee;
+    if (workspace === 'personal') {
+      resolvedAssignee = user.uid;
+    } else if (isRotating) {
+      // Rotation only fills an unset assignee — an explicit pick still wins.
+      resolvedAssignee = assignedTo || rotatedAssignee;
+    } else {
+      resolvedAssignee = assignedTo;
+    }
+
     await addDoc(tasksRef, {
       name: name.trim(),
       room,
       frequency,
       priority,
       dueDate: dueDate || null,
-      assignedTo: workspace === 'personal' ? user.uid : assignedTo,
+      assignedTo: resolvedAssignee,
       notes: notes.trim(),
       lastCompleted: null,
       completionHistory: [],
@@ -44,6 +80,7 @@ function TaskForm({ user, allAssignees = [], workspace, rooms = ['Kitchen', 'Bat
     setName('');
     setNotes('');
     setDueDate('');
+    setAssignedTo('');
     setExpanded(false);
   };
 
@@ -116,7 +153,11 @@ function TaskForm({ user, allAssignees = [], workspace, rooms = ['Kitchen', 'Bat
                   value={assignedTo}
                   onChange={(e) => setAssignedTo(e.target.value)}
                 >
-                  <option value="">Unassigned</option>
+                  <option value="">
+                    {isRotating && rotatedName
+                      ? `Auto — next up: ${rotatedName}`
+                      : 'Unassigned'}
+                  </option>
                   {allAssignees.map((a) => (
                     <option key={a.uid} value={a.uid}>
                       {a.name}

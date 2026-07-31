@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Home, Users } from 'lucide-react';
 import { isOverdue } from './utils/dateHelpers';
 import { getWorkspaceDocId } from "./utils/workspaceHelpers.js";
@@ -53,7 +53,7 @@ function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [needsProfileSetup, setNeedsProfileSetup] = useState(false);
   const [tasks, setTasks] = useState([]);
-  const [teamMembers, setTeamMembers] = useState([]);
+  const [workspaceInvites, setWorkspaceInvites] = useState([]);
   const [filterRoom, setFilterRoom] = useState('All');
   const [filterPriority, setFilterPriority] = useState('All');
   const [filterAssignee, setFilterAssignee] = useState('All');
@@ -64,13 +64,38 @@ function App() {
   const [workspace, setWorkspace] = useState('personal');
   const [teams, setTeams] = useState([{id: 'personal', name: 'Personal'}]);
   const [myInvites, setMyInvites] = useState([]);
+  // Applied once per sign-in: after that the user's own workspace switches win.
+  const appliedDefaultWorkspace = useRef(false);
+  // Read from the user doc at sign-in, consumed by the teams listener below.
+  const defaultWorkspaceRef = useRef(null);
 
   // New: filter menu UI state
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [expandedFilterType, setExpandedFilterType] = useState(null);
   const filterMenuRef = useClickOutside(() => setShowFilterMenu(false));
 
-  const [rooms, setRooms] = useState(DEFAULT_ROOMS);
+  // Rooms live on the workspace doc. Tagged with the workspace they came from so
+  // switching workspaces falls back to the defaults instead of briefly showing
+  // the previous workspace's rooms while the new snapshot is in flight.
+  const [storedRooms, setStoredRooms] = useState(null);
+  const workspaceDocId = user ? getWorkspaceDocId(workspace, user.uid) : null;
+
+  useEffect(() => {
+    if (!workspaceDocId) return;
+    const unsub = onSnapshot(
+        doc(db, 'workspaces', workspaceDocId),
+        (snap) => setStoredRooms({ id: workspaceDocId, rooms: snap.data()?.rooms }),
+        (err) => console.error('Error fetching rooms:', err)
+    );
+    return unsub;
+  }, [workspaceDocId]);
+
+  // Fall back to the defaults when the workspace doc doesn't exist yet or was
+  // emptied, so the room picker is never blank.
+  const rooms = storedRooms?.id === workspaceDocId && storedRooms.rooms?.length
+      ? storedRooms.rooms
+      : DEFAULT_ROOMS;
+
   useEffect(() => {
     if (!user || !workspace) return;
     const q = workspace === 'personal'
@@ -91,6 +116,8 @@ function App() {
         // Check if the user has already completed their profile setup
         const userDocSnap = await getDoc(doc(db, 'users', currentUser.uid));
         const profileComplete = userDocSnap.exists() && userDocSnap.data().profileComplete;
+        defaultWorkspaceRef.current =
+            userDocSnap.data()?.preferences?.defaultWorkspace ?? null;
 
         if (!profileComplete) {
           // First time: show profile setup before entering the app
@@ -126,21 +153,39 @@ function App() {
         ...d.data(),
       }));
       setTeams([{id: 'personal', name: 'Personal'}, ...fetchedTeams]);
+
+      // Open the user's preferred workspace, once per sign-in. Applied here because
+      // it needs the team list: a stale preference (a team since left or deleted)
+      // must be ignored rather than selecting a workspace the user can't read.
+      if (!appliedDefaultWorkspace.current) {
+        appliedDefaultWorkspace.current = true;
+        const preferred = defaultWorkspaceRef.current;
+        if (preferred && preferred !== 'personal'
+            && fetchedTeams.some((t) => t.id === preferred)) {
+          setWorkspace(preferred);
+        }
+      }
     });
-    return unsub;
+    return () => {
+      unsub();
+      // Next sign-in should apply the preference again.
+      appliedDefaultWorkspace.current = false;
+    };
   }, [user]);
 
 
 
+  // Every invite belonging to the active team, whatever its status — used to show
+  // roommates who've been invited but haven't accepted yet alongside real members.
   useEffect(() => {
     if (!user || !workspace || workspace === 'personal') {
-      setTeamMembers([]);
+      setWorkspaceInvites([]);
       return;
     }
     const q = query(invitesRef, where('teamId', '==', workspace));
     const unsub = onSnapshot(
         q,
-        (snapshot) => setTeamMembers(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))),
+        (snapshot) => setWorkspaceInvites(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))),
         (err) => console.error('Error fetching invites:', err)
     );
     return unsub;
@@ -213,7 +258,7 @@ function App() {
     });
 
     // Add pending invites for the current team
-    const pendingInvites = teamMembers.filter(
+    const pendingInvites = workspaceInvites.filter(
         (m) => m.teamId === workspace && m.status === 'pending'
     );
     pendingInvites.forEach((invite) => {
@@ -389,8 +434,25 @@ function App() {
           )}
 
           <main className="app-content">
-            {activeTab === 'profile' && <UserProfile user={user} />}
-            {activeTab === 'preferences' && <Preferences user={user} />}
+            {activeTab === 'profile' && (
+                <UserProfile
+                    user={user}
+                    profile={usersMap[user.uid]}
+                    onProfileSave={(displayName) =>
+                        // Mirror ProfileSetup: keep the local auth user in step so the
+                        // sidebar and task attribution update without a reload.
+                        setUser((prev) => ({ ...prev, displayName }))
+                    }
+                />
+            )}
+            {activeTab === 'preferences' && (
+                <Preferences
+                    user={user}
+                    profile={usersMap[user.uid]}
+                    teams={teams}
+                    workspace={workspace}
+                />
+            )}
             {activeTab === 'tasks' && (
                 <>
                   <TaskForm
@@ -398,6 +460,8 @@ function App() {
                       allAssignees={allAssignees}
                       workspace={workspace}
                       rooms={rooms}
+                      autoAssign={activeTeam?.preferences?.autoAssign}
+                      tasks={tasks}
                   />
 
                   <div className="filters" style={{padding: '20px 24px 16px'}}>
@@ -573,7 +637,7 @@ function App() {
             )}
 
             {activeTab === 'living-space' && (
-                <LivingSpace rooms={rooms} workspace={getWorkspaceDocId(workspace, user.uid)} />
+                <LivingSpace rooms={rooms} workspace={workspaceDocId} />
             )}
 
             {activeTab === 'stats' && (

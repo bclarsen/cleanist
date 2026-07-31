@@ -183,29 +183,32 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
           >
             Teams
           </button>
-          <div style={{ position: 'relative' }} ref={settingsMenuRef}>
-            <button
-                className="btn-icon-settings"
-                onClick={() => setShowSettingsMenu(!showSettingsMenu)}
-                title="Settings"
-            >
-              <Settings size={18} strokeWidth={2} />
-            </button>
+        </div>
 
-            {showSettingsMenu && (
-                <div className="settings-dropdown">
-                  <button onClick={() => { setActiveTab('profile'); setShowSettingsMenu(false); }}>
-                    User Profile
-                  </button>
-                  <button onClick={() => { setActiveTab('preferences'); setShowSettingsMenu(false); }}>
-                    Preferences
-                  </button>
-                  <button onClick={() => signOut(auth)} className="danger">
-                    Sign Out
-                  </button>
-                </div>
-            )}
-          </div>
+        {/* Sibling of .header-actions, not a child — the header's space-between
+            is what pushes this to the right edge. */}
+        <div className="header-settings" ref={settingsMenuRef}>
+          <button
+              className="btn-icon-settings"
+              onClick={() => setShowSettingsMenu(!showSettingsMenu)}
+              title="Settings"
+          >
+            <Settings size={18} strokeWidth={2} />
+          </button>
+
+          {showSettingsMenu && (
+              <div className="settings-dropdown">
+                <button onClick={() => { setActiveTab('profile'); setShowSettingsMenu(false); }}>
+                  User Profile
+                </button>
+                <button onClick={() => { setActiveTab('preferences'); setShowSettingsMenu(false); }}>
+                  Preferences
+                </button>
+                <button onClick={() => signOut(auth)} className="danger">
+                  Sign Out
+                </button>
+              </div>
+          )}
         </div>
       </header>
 

@@ -2,33 +2,34 @@ import { useState } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
-function UserProfile({ user }) {
+function UserProfile({ user, profile, onProfileSave }) {
     const [editing, setEditing] = useState(false);
-    const [firstName, setFirstName] = useState(user.displayName?.split(' ')[0] || '');
-    const [lastName, setLastName] = useState(
-        user.displayName?.split(' ').slice(1).join(' ') || ''
-    );
+    const [displayName, setDisplayName] = useState(user.displayName || '');
+    const [phoneNumber, setPhoneNumber] = useState(profile?.phoneNumber || '');
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
 
     const handleSave = async () => {
-        const trimmedFirst = firstName.trim();
-        const trimmedLast = lastName.trim();
-        if (!trimmedFirst) {
-            setError('First name is required.');
+        const trimmedName = displayName.trim();
+        const trimmedPhone = phoneNumber.trim();
+        if (!trimmedName) {
+            setError('Display name is required.');
             return;
         }
-
-        const displayName = trimmedLast ? `${trimmedFirst} ${trimmedLast}` : trimmedFirst;
 
         setSaving(true);
         setError('');
         try {
+            // firstName/lastName are kept in sync with displayName so the doc written
+            // by ProfileSetup stays coherent.
+            const [first, ...rest] = trimmedName.split(' ');
             await updateDoc(doc(db, 'users', user.uid), {
-                firstName: trimmedFirst,
-                lastName: trimmedLast,
-                displayName,
+                displayName: trimmedName,
+                firstName: first,
+                lastName: rest.join(' '),
+                phoneNumber: trimmedPhone,
             });
+            onProfileSave?.(trimmedName);
             setEditing(false);
         } catch (err) {
             console.error('Error updating profile:', err);
@@ -39,30 +40,20 @@ function UserProfile({ user }) {
     };
 
     const handleCancel = () => {
-        setFirstName(user.displayName?.split(' ')[0] || '');
-        setLastName(user.displayName?.split(' ').slice(1).join(' ') || '');
+        setDisplayName(user.displayName || '');
+        setPhoneNumber(profile?.phoneNumber || '');
         setError('');
         setEditing(false);
     };
 
     return (
-        <div className="profile-panel" style={{ padding: '0 24px' }}>
-            <div style={{ marginBottom: '20px' }}>
+        <div className="settings-panel">
+            <div className="settings-panel-heading">
                 <h2>User Profile</h2>
             </div>
 
-            <div
-                className="task-item"
-                style={{
-                    padding: '32px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '16px',
-                    maxWidth: '420px',
-                }}
-            >
-                <div className="avatar-circle avatar-lg-wrap">
+            <div className="task-item settings-card">
+                <div className="profile-avatar">
                     {user.photoURL ? (
                         <img src={user.photoURL} alt="" className="avatar-lg" />
                     ) : (
@@ -74,38 +65,75 @@ function UserProfile({ user }) {
 
                 {!editing ? (
                     <>
-                        <div style={{ textAlign: 'center' }}>
-                            <h3 style={{ margin: '0 0 4px', color: 'var(--teal-dark)', fontSize: 'var(--text-lg)' }}>
-                                {user.displayName || 'No name set'}
-                            </h3>
-                            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-                                {user.email}
-                            </p>
+                        <div className="profile-identity">
+                            <h3>{user.displayName || 'No name set'}</h3>
+                            <p>{user.email}</p>
                         </div>
+
+                        <dl className="profile-details">
+                            <div className="profile-detail-row">
+                                <dt>Display Name</dt>
+                                <dd>{user.displayName || <span className="profile-detail-empty">Not set</span>}</dd>
+                            </div>
+                            <div className="profile-detail-row">
+                                <dt>Email</dt>
+                                <dd>{user.email}</dd>
+                            </div>
+                            <div className="profile-detail-row">
+                                <dt>Phone Number</dt>
+                                <dd>
+                                    {profile?.phoneNumber || <span className="profile-detail-empty">Not set</span>}
+                                </dd>
+                            </div>
+                        </dl>
+
                         <button className="btn-primary" onClick={() => setEditing(true)}>
-                            Edit Name
+                            Edit Profile
                         </button>
                     </>
                 ) : (
-                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <div className="profile-name-row">
-                            <div className="profile-field">
-                                <label>First Name</label>
-                                <input
-                                    type="text"
-                                    value={firstName}
-                                    onChange={(e) => setFirstName(e.target.value)}
-                                    autoFocus
-                                />
-                            </div>
-                            <div className="profile-field">
-                                <label>Last Name</label>
-                                <input
-                                    type="text"
-                                    value={lastName}
-                                    onChange={(e) => setLastName(e.target.value)}
-                                />
-                            </div>
+                    <div className="profile-edit-form">
+                        <div className="profile-field">
+                            <label htmlFor="displayName">Display Name</label>
+                            <input
+                                id="displayName"
+                                type="text"
+                                value={displayName}
+                                onChange={(e) => setDisplayName(e.target.value)}
+                                placeholder="e.g. Alex Johnson"
+                                autoFocus
+                                autoComplete="name"
+                            />
+                            <p className="profile-field-note">
+                                This is the name your roommates see.
+                            </p>
+                        </div>
+
+                        <div className="profile-field">
+                            <label htmlFor="email">Email</label>
+                            <input
+                                id="email"
+                                type="email"
+                                value={user.email || ''}
+                                readOnly
+                                disabled
+                            />
+                            <p className="profile-field-note">
+                                Comes from your Google account and can&apos;t be changed here — team
+                                invites are matched to this address.
+                            </p>
+                        </div>
+
+                        <div className="profile-field">
+                            <label htmlFor="phoneNumber">Phone Number</label>
+                            <input
+                                id="phoneNumber"
+                                type="tel"
+                                value={phoneNumber}
+                                onChange={(e) => setPhoneNumber(e.target.value)}
+                                placeholder="e.g. (555) 123-4567"
+                                autoComplete="tel"
+                            />
                         </div>
 
                         {error && <p className="profile-setup-error">{error}</p>}
@@ -117,7 +145,7 @@ function UserProfile({ user }) {
                             <button
                                 className="btn-primary"
                                 onClick={handleSave}
-                                disabled={saving || !firstName.trim()}
+                                disabled={saving || !displayName.trim()}
                             >
                                 {saving ? 'Saving…' : 'Save'}
                             </button>

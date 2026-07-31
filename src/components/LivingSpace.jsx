@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Home, X } from 'lucide-react';
-import { doc, setDoc, arrayRemove } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 function LivingSpace({ rooms, workspace }) {
@@ -26,7 +26,10 @@ function LivingSpace({ rooms, workspace }) {
     if (rooms.length <= 1) return;
     try {
       const roomRef = doc(db, 'workspaces', workspace);
-      await setDoc(roomRef, { rooms: arrayRemove(roomToDelete) }, { merge: true });
+      // Write the explicit remaining list rather than arrayRemove: the default
+      // rooms may never have been persisted, so there'd be nothing to remove from.
+      const updatedRooms = rooms.filter((r) => r !== roomToDelete);
+      await setDoc(roomRef, { rooms: updatedRooms }, { merge: true });
     } catch (err) {
       console.error('Error deleting room:', err);
     }

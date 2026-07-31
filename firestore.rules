@@ -30,7 +30,10 @@ service cloud.firestore {
         request.auth.uid == resource.data.createdBy
         || request.resource.data.members == resource.data.members.concat([request.auth.uid])   // accepting an invite (self-join)
         || request.resource.data.members == resource.data.members.removeAll([request.auth.uid]) // leaving the team (self-remove)
-        || request.resource.data.members == resource.data.members                               // no membership change at all
+        // No membership change at all. `preferences` is excluded here so only the
+        // creator can change team settings — without this guard any member could.
+        || (request.resource.data.members == resource.data.members
+            && request.resource.data.get('preferences', {}) == resource.data.get('preferences', {}))
         );
 
       allow delete: if request.auth != null &&
