@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { Home, Users } from 'lucide-react';
 import { isOverdue } from './utils/dateHelpers';
 import { getWorkspaceDocId } from "./utils/workspaceHelpers.js";
+import { useClickOutside } from './hooks/useClickOutside';
 import {
   collection,
   onSnapshot,
@@ -27,6 +29,7 @@ import Sidebar from './components/Sidebar';
 import UserProfile from './components/UserProfile';
 import Preferences from './components/Preferences';
 import InviteBanner from './components/InviteBanner';
+
 
 const tasksRef = collection(db, 'tasks');
 const invitesRef = collection(db, 'teamInvites');
@@ -60,10 +63,12 @@ function App() {
 
   const [workspace, setWorkspace] = useState('personal');
   const [teams, setTeams] = useState([{id: 'personal', name: 'Personal'}]);
+  const [myInvites, setMyInvites] = useState([]);
 
   // New: filter menu UI state
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [expandedFilterType, setExpandedFilterType] = useState(null);
+  const filterMenuRef = useClickOutside(() => setShowFilterMenu(false));
 
   const [rooms, setRooms] = useState(DEFAULT_ROOMS);
   useEffect(() => {
@@ -128,14 +133,6 @@ function App() {
 
 
   useEffect(() => {
-    if (!user) return;
-    const unsub = onSnapshot(tasksRef, (snapshot) => {
-      setTasks(snapshot.docs.map((d) => ({id: d.id, ...d.data()})));
-    });
-    return unsub;
-  }, [user]);
-
-  useEffect(() => {
     if (!user || !workspace || workspace === 'personal') {
       setTeamMembers([]);
       return;
@@ -148,6 +145,24 @@ function App() {
     );
     return unsub;
   }, [user, workspace]);
+
+  // Invites addressed to me, regardless of which workspace I'm viewing.
+  // Must stay separate from the workspace-scoped listener above: you aren't a
+  // member of the inviting team yet, so it can't surface your own invites.
+  useEffect(() => {
+    if (!user?.email) return;
+    const q = query(
+        invitesRef,
+        where('inviteeEmail', '==', user.email.toLowerCase()),
+        where('status', '==', 'pending'),
+    );
+    const unsub = onSnapshot(
+        q,
+        (snapshot) => setMyInvites(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }))),
+        (err) => console.error('Error fetching my invites:', err)
+    );
+    return unsub;
+  }, [user]);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'users'), (snapshot) => {
@@ -175,9 +190,7 @@ function App() {
 
   const activeTeam = teams.find((t) => t.id === workspace);
 
-  const myPendingInvites = teamMembers.filter(
-      (inv) => inv.inviteeEmail === user.email?.toLowerCase() && inv.status === 'pending'
-  );
+  const myPendingInvites = myInvites;
 
   const allAssignees = [];
   if (workspace === 'personal') {
@@ -204,11 +217,15 @@ function App() {
         (m) => m.teamId === workspace && m.status === 'pending'
     );
     pendingInvites.forEach((invite) => {
-      const isAlreadyMember = allAssignees.some((a) => a.email === invite.inviteeEmail || a.uid === invite.inviteeEmail);
+      // inviteeEmail is stored lowercased; member emails come from auth as-is
+      const inviteeEmail = invite.inviteeEmail?.toLowerCase();
+      const isAlreadyMember = allAssignees.some(
+          (a) => a.email?.toLowerCase() === inviteeEmail || a.uid === invite.inviteeEmail
+      );
       if (!isAlreadyMember) {
         allAssignees.push({
           uid: invite.inviteeEmail,
-          name: invite.inviteeName || invite.inviteeEmail,
+          name: invite.inviteeEmail,
           isPending: true,
         });
       }
@@ -323,11 +340,22 @@ function App() {
               />
           ))}
 
+          {activeTab !== 'profile' && activeTab !== 'preferences' && (
           <div className="workspace-banner">
             <div className="workspace-details">
               <span className="workspace-label">Workspace</span>
               <h2 className="workspace-title-text">
-                {workspace === 'personal' ? '🏠 Personal Tasks' : `👥 ${activeTeam?.name || 'Loading Team...'}`}
+                {workspace === 'personal' ? (
+                    <>
+                      <Home size={19} strokeWidth={2}/>
+                      Personal Tasks
+                    </>
+                ) : (
+                    <>
+                      <Users size={19} strokeWidth={2}/>
+                      {activeTeam?.name || 'Loading Team...'}
+                    </>
+                )}
               </h2>
             </div>
 
@@ -358,6 +386,7 @@ function App() {
                 </div>
             )}
           </div>
+          )}
 
           <main className="app-content">
             {activeTab === 'profile' && <UserProfile user={user} />}
@@ -372,7 +401,7 @@ function App() {
                   />
 
                   <div className="filters" style={{padding: '20px 24px 16px'}}>
-                    <div style={{position: 'relative', display: 'inline-block'}}>
+                    <div style={{position: 'relative', display: 'inline-block'}} ref={filterMenuRef}>
                       <button
                           className="btn-pill-outline"
                           onClick={() => setShowFilterMenu(!showFilterMenu)}

@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { Settings, X } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '../firebase';
+import { useClickOutside } from '../hooks/useClickOutside';
 import {
   collection,
   addDoc,
@@ -8,7 +10,10 @@ import {
   doc,
   updateDoc,
   serverTimestamp,
-  arrayRemove
+  arrayRemove,
+  getDocs,
+  query,
+  where
 } from 'firebase/firestore';
 
 const teamsRef = collection(db, 'teams');
@@ -26,6 +31,9 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
   const [showAddMembers, setShowAddMembers] = useState(false);
 
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const containerRef = useClickOutside(() => setShowInvite(false));
+  const manageMenuRef = useClickOutside(() => setShowManageMenu(false));
+  const settingsMenuRef = useClickOutside(() => setShowSettingsMenu(false));
 
   const handleWorkspaceChange = (teamId) => {
     setWorkspace(teamId);
@@ -104,11 +112,26 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
     }
 
     try {
+      // Don't stack duplicate invites — they'd render as repeated banners
+      const existing = await getDocs(query(
+          invitesRef,
+          where('teamId', '==', workspace),
+          where('inviteeEmail', '==', normalizedEmail),
+          where('status', '==', 'pending'),
+      ));
+      if (!existing.empty) {
+        setInviteStatus({
+          type: 'error',
+          message: 'This person already has a pending invite.',
+        });
+        return;
+      }
+
       await addDoc(invitesRef, {
         teamId: workspace,
         teamName: currentTeam.name,
         inviterUid: user.uid,
-        inviteeEmail: inviteEmail.trim().toLowerCase(),
+        inviteeEmail: normalizedEmail,
         status: 'pending',
         createdAt: serverTimestamp(),
       });
@@ -151,7 +174,7 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
   };
 
   return (
-    <>
+      <div ref={containerRef}>
       <header className="app-header">
         <div className="header-actions">
           <button
@@ -160,13 +183,13 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
           >
             Teams
           </button>
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative' }} ref={settingsMenuRef}>
             <button
                 className="btn-icon-settings"
                 onClick={() => setShowSettingsMenu(!showSettingsMenu)}
                 title="Settings"
             >
-              ⚙️
+              <Settings size={18} strokeWidth={2} />
             </button>
 
             {showSettingsMenu && (
@@ -224,7 +247,7 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
             </div>
 
             {workspace !== 'personal' && (
-              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <div style={{ position: 'relative', flexShrink: 0 }} ref={manageMenuRef}>
                 <button
                   className="btn-pill-outline"
                   onClick={() => setShowManageMenu(!showManageMenu)}
@@ -333,7 +356,7 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
                                   title="Remove member"
                                   onClick={() => handleRemoveMember(uid)}
                               >
-                                ✕
+                                <X size={15} strokeWidth={2.5} />
                               </button>
                           )}
                         </li>
@@ -383,7 +406,7 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
           </ul>
         </div>
       )}
-    </>
+      </div>
   );
 }
 

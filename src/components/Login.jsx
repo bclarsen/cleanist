@@ -13,8 +13,8 @@ function Login() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <img src="/Cleanist_Logo.png" alt="Cleanist Logo" className="login-logo" style={{ height: '60px', marginBottom: '16px' }} />
-        <h1>Cleanist</h1>
+        <img src="/Mop_Logo.png" alt="Mop Logo" className="login-logo" style={{ height: '60px', marginBottom: '16px' }} />
+        <h1>Mop</h1>
         <p>Track tasks, assign chores, and keep your home clean together.</p>
         <button className="btn-primary btn-google" onClick={handleSignIn}>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">

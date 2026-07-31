@@ -1,4 +1,5 @@
 import { Component } from 'react';
+import { AlertTriangle } from 'lucide-react';
 
 class ErrorBoundary extends Component {
     constructor(props) {
@@ -23,9 +24,11 @@ class ErrorBoundary extends Component {
             return (
                 <div className="error-boundary">
                     <div className="error-boundary-card">
-                        <div className="error-boundary-icon">⚠️</div>
+                        <div className="error-boundary-icon">
+                            <AlertTriangle size={40} strokeWidth={1.75} />
+                        </div>
                         <h1>Something went wrong</h1>
-                        <p>Cleanist ran into an unexpected error. Try reloading the page.</p>
+                        <p>Mop ran into an unexpected error. Try reloading the page.</p>
                         <button className="btn-primary" onClick={this.handleReload}>
                             Reload
                         </button>
