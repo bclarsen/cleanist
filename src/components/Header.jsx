@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Settings, X } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { useClickOutside } from '../hooks/useClickOutside';
@@ -170,7 +171,7 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
                 onClick={() => setShowSettingsMenu(!showSettingsMenu)}
                 title="Settings"
             >
-              ⚙️
+              <Settings size={18} strokeWidth={2} />
             </button>
 
             {showSettingsMenu && (
@@ -337,7 +338,7 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
                                   title="Remove member"
                                   onClick={() => handleRemoveMember(uid)}
                               >
-                                ✕
+                                <X size={15} strokeWidth={2.5} />
                               </button>
                           )}
                         </li>

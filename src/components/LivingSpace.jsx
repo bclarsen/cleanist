@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Home, X } from 'lucide-react';
 import { doc, setDoc, arrayRemove } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -62,13 +63,16 @@ function LivingSpace({ rooms, workspace }) {
               borderRadius: '8px'
             }}
           >
-            <strong>🏠 {room}</strong>
+            <strong style={{ display: 'inline-flex', alignItems: 'center', gap: '7px' }}>
+              <Home size={15} strokeWidth={2} />
+              {room}
+            </strong>
             <button
               className="btn-delete"
               title="Remove room"
               onClick={() => handleDeleteRoom(room)}
             >
-              ✕
+              <X size={15} strokeWidth={2.5} />
             </button>
           </div>
         ))}

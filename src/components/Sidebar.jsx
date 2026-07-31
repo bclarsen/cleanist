@@ -1,11 +1,10 @@
-import { signOut } from 'firebase/auth';
-import { auth } from '../firebase';
+import { BarChart3, ClipboardList, Home, Package } from 'lucide-react';
 
 const NAV_ITEMS = [
-    { id: 'tasks', label: 'Tasks', icon: '📋' },
-    { id: 'inventory', label: 'Inventory', icon: '📦' },
-    { id: 'living-space', label: 'Living Space', icon: '🏠' },
-    { id: 'stats', label: 'Stats', icon: '📊' },
+    { id: 'tasks', label: 'Tasks', Icon: ClipboardList },
+    { id: 'inventory', label: 'Inventory', Icon: Package },
+    { id: 'living-space', label: 'Living Space', Icon: Home },
+    { id: 'stats', label: 'Stats', Icon: BarChart3 },
 ];
 
 function Sidebar({ user, activeTab, setActiveTab }) {
@@ -17,14 +16,14 @@ function Sidebar({ user, activeTab, setActiveTab }) {
             </div>
 
             <nav className="sidebar-nav">
-                {NAV_ITEMS.map((item) => (
+                {NAV_ITEMS.map(({ id, label, Icon }) => (
                     <button
-                        key={item.id}
-                        className={activeTab === item.id ? 'sidebar-tab active' : 'sidebar-tab'}
-                        onClick={() => setActiveTab(item.id)}
+                        key={id}
+                        className={activeTab === id ? 'sidebar-tab active' : 'sidebar-tab'}
+                        onClick={() => setActiveTab(id)}
                     >
-                        <span className="sidebar-tab-icon">{item.icon}</span>
-                        {item.label}
+                        <Icon className="sidebar-tab-icon" size={17} strokeWidth={2} />
+                        {label}
                     </button>
                 ))}
             </nav>
@@ -38,9 +37,6 @@ function Sidebar({ user, activeTab, setActiveTab }) {
                     )}
                 </div>
                 <span className="sidebar-user-name">{user.displayName || user.email}</span>
-                <button className="btn-ghost" onClick={() => signOut(auth)} title="Sign out">
-                    ⎋
-                </button>
             </div>
         </aside>
     );

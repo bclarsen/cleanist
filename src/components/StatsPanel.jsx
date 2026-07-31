@@ -1,4 +1,12 @@
+import { Award, Check, Medal, Trophy } from 'lucide-react';
 import { isOverdue } from '../utils/dateHelpers';
+
+// Gold / silver / bronze for the top three finishers
+const PODIUM = [
+  { Icon: Trophy, color: '#d4a017', label: '1st place' },
+  { Icon: Medal, color: '#9ca3af', label: '2nd place' },
+  { Icon: Award, color: '#b07d4a', label: '3rd place' },
+];
 
 function StatsPanel({ tasks, currentUser }) {
   const totalTasks = tasks.length;
@@ -62,21 +70,39 @@ function StatsPanel({ tasks, currentUser }) {
 
       <div className="stats-grid">
         <section className="stats-section">
-          <h3>Leaderboard 🏆</h3>
+          <h3>
+            Leaderboard
+            <Trophy size={16} strokeWidth={2} className="section-title-icon" />
+          </h3>
           {sortedPeople.length === 0 ? (
             <p className="empty-note">No completions yet — get cleaning!</p>
           ) : (
             <ul className="leaderboard">
-              {sortedPeople.map(([uid, data], i) => (
-                <li key={uid} className="leaderboard-item">
-                  <span className="rank">{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`}</span>
-                  <span className="lb-name">{data.name}{uid === currentUser.uid ? " (you)" : ""}</span>
-                  <div className="lb-bar-wrap">
-                    <div className="lb-bar" style={{ width: `${(data.count / maxCount) * 100}%` }} />
-                  </div>
-                  <span className="lb-count">{data.count}</span>
-                </li>
-              ))}
+              {sortedPeople.map(([uid, data], i) => {
+                const podium = PODIUM[i];
+                const PodiumIcon = podium?.Icon;
+                return (
+                  <li key={uid} className="leaderboard-item">
+                    <span className="rank">
+                      {PodiumIcon ? (
+                        <PodiumIcon
+                          size={17}
+                          strokeWidth={2}
+                          color={podium.color}
+                          aria-label={podium.label}
+                        />
+                      ) : (
+                        `#${i + 1}`
+                      )}
+                    </span>
+                    <span className="lb-name">{data.name}{uid === currentUser.uid ? " (you)" : ""}</span>
+                    <div className="lb-bar-wrap">
+                      <div className="lb-bar" style={{ width: `${(data.count / maxCount) * 100}%` }} />
+                    </div>
+                    <span className="lb-count">{data.count}</span>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>
@@ -108,7 +134,9 @@ function StatsPanel({ tasks, currentUser }) {
           <ul className="activity-feed">
             {recentCompletions.slice(0, 20).map((h, i) => (
               <li key={i} className="activity-item">
-                <span className="activity-dot">✓</span>
+                <span className="activity-dot">
+                  <Check size={14} strokeWidth={3} />
+                </span>
                 <div>
                   <strong>{h.taskName}</strong>
                   <span className="activity-meta"> · {h.room} · {h.completedByName} · {new Date(h.completedAt).toLocaleDateString()}</span>

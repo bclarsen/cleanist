@@ -1,3 +1,4 @@
+import { Sparkles } from 'lucide-react';
 import TaskItem from './TaskItem';
 import { isOverdue, isRecentlyCompleted } from '../utils/dateHelpers';
 
@@ -37,7 +38,10 @@ function TaskList({ tasks, currentUser, allAssignees }) {
   if (tasks.length === 0) {
     return (
         <div className="empty-state">
-          <p>🧹 No tasks here. Add one above!</p>
+          <p>
+            <Sparkles size={16} strokeWidth={2} />
+            No tasks here. Add one above!
+          </p>
         </div>
     );
   }

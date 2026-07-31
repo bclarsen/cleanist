@@ -1,4 +1,12 @@
 import { useState } from 'react';
+import {
+  AlertCircle,
+  Calendar,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Trash2,
+} from 'lucide-react';
 import { updateDoc, deleteDoc, doc, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getNextDue, isOverdue } from '../utils/dateHelpers';
@@ -94,11 +102,15 @@ function TaskItem({ task, currentUser, allAssignees = [] }) {
             )}
             {task.dueDate && (
               <span className={`due-date ${overdue ? 'overdue-text' : ''}`}>
-                📅 {new Date(task.dueDate).toLocaleDateString()}
+                <Calendar size={13} strokeWidth={2} />
+                {new Date(task.dueDate).toLocaleDateString()}
               </span>
             )}
             {overdue && (
-                <span className="overdue-badge">❗ Overdue</span>
+                <span className="overdue-badge">
+                  <AlertCircle size={12} strokeWidth={2.5} />
+                  Overdue
+                </span>
             )}
 
             <button
@@ -108,18 +120,26 @@ function TaskItem({ task, currentUser, allAssignees = [] }) {
                 markDone();
               }}
             >
-              ✓ Done
+              <Check size={14} strokeWidth={2.5} />
+              Done
             </button>
             <button
               className="btn-delete"
+              title="Delete task"
               onClick={(e) => {
                 e.stopPropagation();
                 removeTask();
               }}
             >
-              🗑
+              <Trash2 size={15} strokeWidth={2} />
             </button>
-            <span className="expand-icon">{expanded ? '▲' : '▼'}</span>
+            <span className="expand-icon">
+              {expanded ? (
+                <ChevronUp size={15} strokeWidth={2.5} />
+              ) : (
+                <ChevronDown size={15} strokeWidth={2.5} />
+              )}
+            </span>
           </div>
         </div>
 

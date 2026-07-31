@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
 import {
   collection,
   addDoc,
@@ -198,7 +199,7 @@ function Inventory({ user, workspace }) {
                   title="Delete Item"
                   onClick={() => handleDeleteItem(item.id)}
                 >
-                  ✕
+                  <X size={15} strokeWidth={2.5} />
                 </button>
               </div>
             </div>

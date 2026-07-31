@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Home, Users } from 'lucide-react';
 import { isOverdue } from './utils/dateHelpers';
 import { getWorkspaceDocId } from "./utils/workspaceHelpers.js";
 import { useClickOutside } from './hooks/useClickOutside';
@@ -331,7 +332,17 @@ function App() {
             <div className="workspace-details">
               <span className="workspace-label">Workspace</span>
               <h2 className="workspace-title-text">
-                {workspace === 'personal' ? '🏠 Personal Tasks' : `👥 ${activeTeam?.name || 'Loading Team...'}`}
+                {workspace === 'personal' ? (
+                    <>
+                      <Home size={19} strokeWidth={2}/>
+                      Personal Tasks
+                    </>
+                ) : (
+                    <>
+                      <Users size={19} strokeWidth={2}/>
+                      {activeTeam?.name || 'Loading Team...'}
+                    </>
+                )}
               </h2>
             </div>
 

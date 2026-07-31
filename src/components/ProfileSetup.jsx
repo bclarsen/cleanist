@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ArrowRight, Hand } from 'lucide-react';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -48,7 +49,9 @@ function ProfileSetup({ user, onComplete }) {
   return (
     <div className="profile-setup-overlay">
       <div className="profile-setup-card">
-        <div className="profile-setup-icon">👋</div>
+        <div className="profile-setup-icon">
+          <Hand size={48} strokeWidth={1.5} />
+        </div>
         <h1 className="profile-setup-title">Welcome to Cleanist!</h1>
         <p className="profile-setup-subtitle">
           Before you dive in, let us know what to call you — your roommates will
@@ -89,7 +92,14 @@ function ProfileSetup({ user, onComplete }) {
             className="btn-primary profile-setup-submit"
             disabled={saving || !firstName.trim()}
           >
-            {saving ? 'Saving…' : 'Let\'s Go →'}
+            {saving ? (
+              'Saving…'
+            ) : (
+              <>
+                Let&apos;s Go
+                <ArrowRight size={16} strokeWidth={2.5} />
+              </>
+            )}
           </button>
         </form>
 
