@@ -1,5 +1,5 @@
 import { Award, Check, Medal, Trophy } from 'lucide-react';
-import { isOverdue } from '../utils/dateHelpers';
+import { formatCompletedAt, isOverdue } from '../utils/dateHelpers';
 
 // Gold / silver / bronze for the top three finishers
 const PODIUM = [
@@ -139,7 +139,7 @@ function StatsPanel({ tasks, currentUser }) {
                 </span>
                 <div>
                   <strong>{h.taskName}</strong>
-                  <span className="activity-meta"> · {h.room} · {h.completedByName} · {new Date(h.completedAt).toLocaleDateString()}</span>
+                  <span className="activity-meta"> · {h.room} · {h.completedByName} · {formatCompletedAt(h.completedAt)}</span>
                 </div>
               </li>
             ))}

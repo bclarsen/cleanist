@@ -5,11 +5,19 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  Clock,
   Trash2,
 } from 'lucide-react';
 import { updateDoc, deleteDoc, doc, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase';
-import { getNextDue, isOverdue } from '../utils/dateHelpers';
+import {
+  formatCompletedAt,
+  formatDueDate,
+  getNextDue,
+  hasDueTime,
+  isOverdue,
+  parseDueDate,
+} from '../utils/dateHelpers';
 
 const PRIORITY_CONFIG = {
   high: { label: 'High', color: '#b45309', bg: '#fffbeb' }, // Sienna
@@ -43,6 +51,9 @@ function TaskItem({ task, currentUser, allAssignees = [] }) {
         completedBy: currentUser.uid,
         completedByName: currentUser.displayName,
         dueAt: task.dueDate || null, // snapshot due date for permanent history
+        // Snapshot too: whether this completion beat its deadline. Derived now
+        // because `dueAt` alone can't tell you later — the task may be edited.
+        wasLate: task.dueDate ? now > parseDueDate(task.dueDate).getTime() : null,
       }),
     });
   };
@@ -101,9 +112,16 @@ function TaskItem({ task, currentUser, allAssignees = [] }) {
               </div>
             )}
             {task.dueDate && (
-              <span className={`due-date ${overdue ? 'overdue-text' : ''}`}>
-                <Calendar size={13} strokeWidth={2} />
-                {new Date(task.dueDate).toLocaleDateString()}
+              <span
+                className={`due-date ${overdue ? 'overdue-text' : ''}`}
+                title={`Due ${formatDueDate(task.dueDate)}`}
+              >
+                {hasDueTime(task.dueDate) ? (
+                  <Clock size={13} strokeWidth={2} />
+                ) : (
+                  <Calendar size={13} strokeWidth={2} />
+                )}
+                {formatDueDate(task.dueDate)}
               </span>
             )}
             {overdue && (
@@ -148,14 +166,15 @@ function TaskItem({ task, currentUser, allAssignees = [] }) {
             {task.lastCompleted && (
               <p className="detail-line">
                 <span className="detail-label">Last done:</span>
-                {new Date(task.lastCompleted).toLocaleDateString()}{' '}
+                {formatCompletedAt(task.lastCompleted)}
                 {task.lastCompletedByName && ` by ${task.lastCompletedByName}`}
               </p>
             )}
             {nextDue && task.frequency !== 'once' && (
               <p className="detail-line">
                 <span className="detail-label">Next due:</span>
-                {nextDue.toLocaleDateString()}
+                {/* Derived from `lastCompleted`, so it carries a time of day. */}
+                {formatCompletedAt(nextDue.getTime())}
               </p>
             )}
             {task.notes && (
@@ -175,8 +194,9 @@ function TaskItem({ task, currentUser, allAssignees = [] }) {
                     .slice(0, 5)
                     .map((h, i) => (
                       <li key={i}>
-                        {new Date(h.completedAt).toLocaleDateString()} —{' '}
+                        {formatCompletedAt(h.completedAt)} —{' '}
                         {h.completedByName || 'Unknown'}
+                        {h.wasLate && <span className="history-late"> late</span>}
                       </li>
                     ))}
                 </ul>

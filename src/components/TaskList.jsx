@@ -1,6 +1,11 @@
+import { useEffect, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import TaskItem from './TaskItem';
-import { isOverdue, isRecentlyCompleted } from '../utils/dateHelpers';
+import {
+  DEFAULT_COMPLETED_WINDOW_MS,
+  isOverdue,
+  isRecentlyCompleted,
+} from '../utils/dateHelpers';
 
 
 function isTaskDone(task) {
@@ -34,7 +39,21 @@ function groupAndSort(taskArr) {
   return grouped;
 }
 
-function TaskList({ tasks, currentUser, allAssignees }) {
+function TaskList({
+  tasks,
+  currentUser,
+  allAssignees,
+  completedWindowMs = DEFAULT_COMPLETED_WINDOW_MS,
+}) {
+  // `isRecentlyCompleted` reads the clock at render time, so without a tick a
+  // task would sit in Completed until some unrelated update forced a re-render.
+  // Check every 30s — fine even for the shortest window a user can configure.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((n) => n + 1), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
   if (tasks.length === 0) {
     return (
         <div className="empty-state">
@@ -46,7 +65,9 @@ function TaskList({ tasks, currentUser, allAssignees }) {
     );
   }
   const activeTasks = tasks.filter((t) => !isTaskDone(t));
-  const completedTasks = tasks.filter((t) => isTaskDone(t) && isRecentlyCompleted(t));
+  const completedTasks = tasks.filter(
+      (t) => isTaskDone(t) && isRecentlyCompleted(t, completedWindowMs),
+  );
 
   return (
       <div className="task-list">
