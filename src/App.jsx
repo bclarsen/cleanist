@@ -28,6 +28,7 @@ import ProfileSetup from './components/ProfileSetup';
 import Sidebar from './components/Sidebar';
 import UserProfile from './components/UserProfile';
 import Preferences from './components/Preferences';
+import History from './components/History';
 import InviteBanner from './components/InviteBanner';
 
 
@@ -391,7 +392,7 @@ function App() {
               />
           ))}
 
-          {activeTab !== 'profile' && activeTab !== 'preferences' && (
+          {activeTab !== 'profile' && activeTab !== 'preferences' && activeTab !== 'history' && (
           <div className="workspace-banner">
             <div className="workspace-details">
               <span className="workspace-label">Workspace</span>
@@ -458,6 +459,9 @@ function App() {
                     teams={teams}
                     workspace={workspace}
                 />
+            )}
+            {activeTab === 'history' && (
+                <History user={user} workspace={workspace} tasks={tasks} />
             )}
             {activeTab === 'tasks' && (
                 <>
@@ -651,6 +655,7 @@ function App() {
                 <StatsPanel
                     tasks={tasks}
                     currentUser={user}
+                    workspace={workspace}
                 />
             )}
           </main>

@@ -204,6 +204,9 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
                 <button onClick={() => { setActiveTab('preferences'); setShowSettingsMenu(false); }}>
                   Preferences
                 </button>
+                <button onClick={() => { setActiveTab('history'); setShowSettingsMenu(false); }}>
+                  History
+                </button>
                 <button onClick={() => signOut(auth)} className="danger">
                   Sign Out
                 </button>

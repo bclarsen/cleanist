@@ -1,4 +1,7 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Award, Check, Medal, Trophy } from 'lucide-react';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { db } from '../firebase';
 import { formatCompletedAt, isOverdue } from '../utils/dateHelpers';
 
 // Gold / silver / bronze for the top three finishers
@@ -8,7 +11,25 @@ const PODIUM = [
   { Icon: Award, color: '#b07d4a', label: '3rd place' },
 ];
 
-function StatsPanel({ tasks, currentUser }) {
+function StatsPanel({ tasks, currentUser, workspace }) {
+  const [historyEntries, setHistoryEntries] = useState([]);
+
+  useEffect(() => {
+    const historyQuery = workspace === 'personal'
+      ? query(
+          collection(db, 'taskHistory'),
+          where('workspace', '==', 'personal'),
+          where('ownerUid', '==', currentUser.uid),
+        )
+      : query(collection(db, 'taskHistory'), where('workspace', '==', workspace));
+
+    return onSnapshot(
+      historyQuery,
+      (snapshot) => setHistoryEntries(snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))),
+      (error) => console.error('Error loading activity history:', error),
+    );
+  }, [currentUser.uid, workspace]);
+
   const totalTasks = tasks.length;
   const totalCompletions = tasks.reduce((sum, t) => sum + (t.completionHistory?.length || 0), 0);
 
@@ -31,14 +52,33 @@ function StatsPanel({ tasks, currentUser }) {
     byRoom[room].completions += (task.completionHistory?.length || 0);
   });
 
-  // Tasks done in last 7 days
+  // Combine the permanent History records with task-embedded records created
+  // before History existed. New records appear in both places, so deduplicate
+  // by task and completion time.
+  const allCompletionEntries = useMemo(() => {
+    const storedKeys = new Set(
+      historyEntries.map((entry) => `${entry.taskId}:${entry.completedAt}`),
+    );
+    const legacyEntries = tasks.flatMap((task) =>
+      (task.completionHistory || [])
+        .filter((entry) => !storedKeys.has(`${task.id}:${entry.completedAt}`))
+        .map((entry, index) => ({
+          ...entry,
+          id: `legacy-${task.id}-${entry.completedAt}-${index}`,
+          taskName: task.name,
+          room: task.room || 'Other',
+        })),
+    );
+    return [...historyEntries, ...legacyEntries];
+  }, [historyEntries, tasks]);
+
+  // Recent Activity intentionally remains a rolling seven-day view even
+  // though its source records are kept permanently by History.
   // eslint-disable-next-line react-hooks/purity
   const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const recentCompletions = tasks.flatMap(t =>
-    (t.completionHistory || [])
-      .filter(h => h.completedAt > sevenDaysAgo)
-      .map(h => ({ ...h, taskName: t.name, room: t.room }))
-  ).sort((a, b) => b.completedAt - a.completedAt);
+  const recentCompletions = allCompletionEntries
+    .filter((entry) => entry.completedAt > sevenDaysAgo)
+    .sort((a, b) => b.completedAt - a.completedAt);
 
   // Overdue count
   const overdueCount = tasks.filter(isOverdue).length;
@@ -132,8 +172,8 @@ function StatsPanel({ tasks, currentUser }) {
           <p className="empty-note">Nothing completed in the last 7 days.</p>
         ) : (
           <ul className="activity-feed">
-            {recentCompletions.slice(0, 20).map((h, i) => (
-              <li key={i} className="activity-item">
+            {recentCompletions.slice(0, 20).map((h) => (
+              <li key={h.id} className="activity-item">
                 <span className="activity-dot">
                   <Check size={14} strokeWidth={3} />
                 </span>

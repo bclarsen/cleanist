@@ -96,6 +96,26 @@ service cloud.firestore {
           (request.resource.data.workspace == 'personal' && request.resource.data.ownerUid == request.auth.uid) ||
           (request.resource.data.workspace != 'personal' &&
             request.auth.uid in get(/databases/$(database)/documents/teams/$(request.resource.data.workspace)).data.members)
+      );
+    }
+
+    // ─────────────────────────────
+    // TASK HISTORY — one permanent record per completion. These records remain
+    // after a task is deleted, so the History page is a complete workspace log.
+    // ─────────────────────────────
+    match /taskHistory/{entryId} {
+      allow read: if request.auth != null && (
+        (resource.data.workspace == 'personal' && resource.data.ownerUid == request.auth.uid) ||
+        (resource.data.workspace != 'personal' &&
+          request.auth.uid in get(/databases/$(database)/documents/teams/$(resource.data.workspace)).data.members)
+      );
+
+      allow create: if request.auth != null &&
+        request.resource.data.completedBy == request.auth.uid && (
+          (request.resource.data.workspace == 'personal' &&
+            request.resource.data.ownerUid == request.auth.uid) ||
+          (request.resource.data.workspace != 'personal' &&
+            request.auth.uid in get(/databases/$(database)/documents/teams/$(request.resource.data.workspace)).data.members)
         );
     }
   }

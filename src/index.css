@@ -1065,6 +1065,48 @@ input:focus, select:focus {
 }
 .settings-card-note strong { color: var(--teal-dark); }
 
+/* ── Workspace task history ───────────────────────────────── */
+.history-page-description {
+  max-width: 520px;
+  margin: 6px auto 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.history-settings-card {
+  align-items: stretch;
+  padding: 30px 36px;
+}
+.workspace-history-list {
+  list-style: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+.workspace-history-entry {
+  display: flex;
+  gap: 14px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border-light);
+}
+.workspace-history-entry:first-child { border-top: none; padding-top: 0; }
+.workspace-history-icon { color: var(--teal-main); flex-shrink: 0; padding-top: 2px; }
+.workspace-history-content { display: flex; flex-direction: column; gap: 4px; }
+.workspace-history-content strong { color: var(--teal-dark); }
+.workspace-history-content span { color: var(--text-muted); font-size: var(--text-sm); }
+.workspace-history-content .history-late,
+.workspace-history-content .workspace-history-on-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.workspace-history-content .workspace-history-on-time { color: var(--teal-main); }
+
+.task-action-error {
+  margin: 12px 0 0;
+  color: var(--priority-high);
+  font-size: var(--text-sm);
+}
+
 /* Subheading splitting the card into groups of related preferences. */
 .preference-group-heading {
   width: 100%;
@@ -1315,4 +1357,3 @@ input:focus, select:focus {
   .profile-name-row   { flex-direction: column; }
   .tab { font-size: 14px; }
 }
-
