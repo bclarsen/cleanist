@@ -3,6 +3,7 @@ import { Settings, X } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { useClickOutside } from '../hooks/useClickOutside';
+import { SETTINGS_PAGES } from '../constants/settings';
 import {
   collection,
   addDoc,
@@ -198,15 +199,17 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
 
           {showSettingsMenu && (
               <div className="settings-dropdown">
-                <button onClick={() => { setActiveTab('profile'); setShowSettingsMenu(false); }}>
-                  User Profile
-                </button>
-                <button onClick={() => { setActiveTab('preferences'); setShowSettingsMenu(false); }}>
-                  Preferences
-                </button>
-                <button onClick={() => { setActiveTab('history'); setShowSettingsMenu(false); }}>
-                  History
-                </button>
+                {SETTINGS_PAGES.map(({ id, label }) => (
+                  <button
+                    key={id}
+                    onClick={() => {
+                      setActiveTab(id);
+                      setShowSettingsMenu(false);
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
                 <button onClick={() => signOut(auth)} className="danger">
                   Sign Out
                 </button>

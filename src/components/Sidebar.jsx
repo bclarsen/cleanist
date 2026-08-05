@@ -1,4 +1,5 @@
 import { BarChart3, ClipboardList, Home, Package } from 'lucide-react';
+import { SETTINGS_TAB_IDS } from '../constants/settings';
 
 const NAV_ITEMS = [
     { id: 'tasks', label: 'Tasks', Icon: ClipboardList },
@@ -8,9 +9,28 @@ const NAV_ITEMS = [
 ];
 
 function Sidebar({ user, activeTab, setActiveTab }) {
+    const isBackable = SETTINGS_TAB_IDS.includes(activeTab);
+
+    const handleBrandClick = () => {
+        if (isBackable) {
+            setActiveTab('tasks');
+        }
+    };
+
     return (
         <aside className="sidebar">
-            <div className="sidebar-brand">
+            <div
+                className={`sidebar-brand ${isBackable ? 'clickable' : ''}`}
+                onClick={handleBrandClick}
+                role={isBackable ? 'button' : undefined}
+                tabIndex={isBackable ? 0 : undefined}
+                onKeyDown={(e) => {
+                    if (isBackable && (e.key === 'Enter' || e.key === ' ')) {
+                        e.preventDefault();
+                        handleBrandClick();
+                    }
+                }}
+            >
                 <img src="/Mop_Logo.png" alt="Mop Logo" className="header-logo" />
                 <h1>Mop</h1>
             </div>
