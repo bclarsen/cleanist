@@ -176,11 +176,11 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
 
   return (
       <div ref={containerRef}>
-      <header className="app-header">
-        <div className="header-actions">
+      <header className="flex justify-between items-center px-6 py-3.5 sticky top-0 z-10 bg-white/75 backdrop-blur-[14px] border-b border-[rgba(196,232,224,0.7)] transition-shadow hover:shadow-[0_2px_20px_rgba(16,185,129,0.06)] dark:bg-[rgba(13,17,23,0.92)] dark:border-b-[rgba(33,38,45,0.95)]">
+        <div className="flex items-center gap-2.5 flex-wrap max-sm:gap-2">
           <button
-            className="btn-pill-outline"
-            onClick={() => setShowInvite(!showInvite)}
+              className="flex items-center gap-1.5 bg-white/70 border border-[var(--border)] text-[color:var(--teal-dark)] px-3.5 py-1.5 rounded-[var(--radius-xl)] text-sm font-semibold hover:bg-[var(--bg-subtle)] hover:border-[var(--teal-main)] dark:bg-[rgba(22,27,34,0.85)]"
+              onClick={() => setShowInvite(!showInvite)}
           >
             Teams
           </button>
@@ -188,9 +188,9 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
 
         {/* Sibling of .header-actions, not a child — the header's space-between
             is what pushes this to the right edge. */}
-        <div className="header-settings" ref={settingsMenuRef}>
+        <div className="relative shrink-0 ml-auto" ref={settingsMenuRef}>
           <button
-              className="btn-icon-settings"
+              className="inline-flex items-center bg-transparent border-none px-2.5 py-1.5 rounded-[var(--radius-sm)] text-[color:var(--teal-dark)] hover:bg-[var(--bg-subtle)]"
               onClick={() => setShowSettingsMenu(!showSettingsMenu)}
               title="Settings"
           >
@@ -198,10 +198,11 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
           </button>
 
           {showSettingsMenu && (
-              <div className="settings-dropdown">
+              <div className="absolute right-0 top-[calc(100%+8px)] bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] shadow-[var(--shadow-sm)] min-w-[180px] z-20 overflow-hidden flex flex-col">
                 {SETTINGS_PAGES.map(({ id, label }) => (
                   <button
                     key={id}
+                    className="text-left px-4 py-2.5 border-none bg-transparent font-semibold text-[color:var(--text-main)] hover:bg-[var(--bg-subtle)]"
                     onClick={() => {
                       setActiveTab(id);
                       setShowSettingsMenu(false);
@@ -210,7 +211,7 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
                     {label}
                   </button>
                 ))}
-                <button onClick={() => signOut(auth)} className="danger">
+                <button onClick={() => signOut(auth)} className="text-left px-4 py-2.5 border-none bg-transparent font-semibold text-[color:var(--priority-high)] hover:bg-[var(--bg-subtle)]">
                   Sign Out
                 </button>
               </div>
@@ -219,25 +220,16 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
       </header>
 
       {showInvite && (
-        <div className="team-dropdown">
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'flex-start',
-              marginBottom: '15px',
-              gap: '8px',
-            }}
-          >
-            <div
-              className="workspace-toggle"
-              style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}
-            >
+        <div className="mx-6 mb-4 p-[18px] border border-[var(--border)] rounded-[var(--radius-lg)] bg-[var(--bg-card)] shadow-[var(--shadow-sm)] animate-[slideDown_0.25s_ease_both]">
+          <div className="flex justify-between items-start mb-[15px] gap-2">
+            <div className="flex flex-wrap gap-2">
               {teams.map((team) => (
                 <button
                   key={team.id}
                   className={
-                    workspace === team.id ? 'btn-primary' : 'btn-ghost'
+                    workspace === team.id
+                      ? 'bg-[var(--teal-main)] text-white border-none px-[18px] py-2 font-bold rounded-[var(--radius-sm)] hover:enabled:bg-[var(--teal-dark)] hover:enabled:-translate-y-px hover:enabled:shadow-[0_3px_10px_rgba(16,185,129,0.25)] active:translate-y-0 active:shadow-none disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none'
+                      : 'bg-transparent border-none px-3.5 py-1.5 text-[color:var(--text-muted)] font-semibold rounded-[var(--radius-sm)] hover:bg-[var(--bg-subtle)] hover:text-[color:var(--teal-dark)]'
                   }
                   onClick={() => handleWorkspaceChange(team.id)}
                 >
@@ -247,7 +239,7 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
 
               {teams.length < 5 && !isNamingTeam && (
                 <button
-                  className="btn-ghost"
+                  className="bg-transparent border-none px-3.5 py-1.5 text-[color:var(--text-muted)] font-semibold rounded-[var(--radius-sm)] hover:bg-[var(--bg-subtle)] hover:text-[color:var(--teal-dark)]"
                   onClick={() => setIsNamingTeam(true)}
                 >
                   +
@@ -256,56 +248,28 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
             </div>
 
             {workspace !== 'personal' && (
-                <div style={{ position: 'relative', flexShrink: 0 }} ref={manageMenuRef}>
+                <div className="relative shrink-0" ref={manageMenuRef}>
                 <button
-                  className="btn-pill-outline"
+                  className="flex items-center gap-1.5 bg-white/70 border border-[var(--border)] text-[color:var(--teal-dark)] px-3.5 py-1.5 rounded-[var(--radius-xl)] text-sm font-semibold hover:bg-[var(--bg-subtle)] hover:border-[var(--teal-main)] dark:bg-[rgba(22,27,34,0.85)]"
                   onClick={() => setShowManageMenu(!showManageMenu)}
                 >
                   Manage Team
                 </button>
 
                 {showManageMenu && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      right: 0,
-                      top: 'calc(100% + 6px)',
-                      background: 'var(--bg-card)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                      minWidth: '160px',
-                      zIndex: 20,
-                      overflow: 'hidden',
-                    }}
-                  >
+                  <div className="absolute right-0 top-[calc(100%+6px)] bg-[var(--bg-card)] border border-[var(--border)] rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.08)] min-w-[160px] z-20 overflow-hidden">
                     <button
-                      style={{
-                        display: 'block',
-                        width: '100%',
-                        textAlign: 'left',
-                        padding: '10px 14px',
-                        border: 'none',
-                        background: 'transparent',
-                      }}
-                      onClick={() => {
-                        setShowAddMembers(true);
-                        setShowManageMenu(false);
-                      }}
+                        className="block w-full text-left px-3.5 py-2.5 border-none bg-transparent"
+                        onClick={() => {
+                          setShowAddMembers(true);
+                          setShowManageMenu(false);
+                        }}
                     >
                       Team members
                     </button>
                     {isCreator && (
                       <button
-                        style={{
-                          display: 'block',
-                          width: '100%',
-                          textAlign: 'left',
-                          padding: '10px 14px',
-                          border: 'none',
-                          background: 'transparent',
-                          color: 'var(--priority-high, #b45309)',
-                        }}
+                        className="block w-full text-left px-3.5 py-2.5 border-none bg-transparent text-[color:var(--priority-high)]"
                         onClick={handleDeleteTeam}
                       >
                         Delete team
@@ -314,15 +278,7 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
 
                     {!isCreator && (
                         <button
-                            style={{
-                              display: 'block',
-                              width: '100%',
-                              textAlign: 'left',
-                              padding: '10px 14px',
-                              border: 'none',
-                              background: 'transparent',
-                              color: 'var(--priority-high, #b45309)',
-                            }}
+                            className="block w-full text-left px-3.5 py-2.5 border-none bg-transparent text-[color:var(--priority-high)]"
                             onClick={handleLeaveTeam}
                         >
                           Leave team
@@ -335,33 +291,33 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
           </div>
 
           {isNamingTeam && (
-            <div className="create-team-form" style={{ marginBottom: '15px' }}>
+            <div className="flex gap-2 mb-[15px]">
               <input
                 type="text"
                 placeholder="New Team Name"
                 value={newTeamName}
                 onChange={(e) => setNewTeamName(e.target.value)}
               />
-              <button className="btn-primary" onClick={handleAddTeam}>
+              <button className="bg-[var(--teal-main)] text-white border-none px-[18px] py-2 font-bold rounded-[var(--radius-sm)] hover:enabled:bg-[var(--teal-dark)] hover:enabled:-translate-y-px hover:enabled:shadow-[0_3px_10px_rgba(16,185,129,0.25)] active:translate-y-0 active:shadow-none disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none" onClick={handleAddTeam}>
                 Create
               </button>
-              <button className="btn-ghost" onClick={handleCancelAddTeam}>
+              <button className="bg-transparent border-none px-3.5 py-1.5 text-[color:var(--text-muted)] font-semibold rounded-[var(--radius-sm)] hover:bg-[var(--bg-subtle)] hover:text-[color:var(--teal-dark)]" onClick={handleCancelAddTeam}>
                 Cancel
               </button>
             </div>
           )}
 
           {showAddMembers && workspace !== 'personal' && (
-              <div style={{ marginTop: '15px' }}>
-                <ul className="team-list">
+              <div className="mt-[15px]">
+                <ul className="list-none p-0 mb-3 flex gap-2 flex-wrap">
                   {(currentTeam?.members || []).map((uid) => {
                     const member = usersMap[uid];
                     return (
-                        <li key={uid} className="team-member">
+                        <li key={uid} className="flex items-center gap-1.5 text-[length:var(--text-sm)] bg-[var(--bg-subtle)] px-3 py-1 rounded-[var(--radius-xl)] transition-colors hover:bg-[var(--accent-light)]">
                           {member?.displayName || (uid === user.uid ? (user.displayName || 'You') : uid)}
                           {isCreator && uid !== user.uid && (
                               <button
-                                  className="btn-delete"
+                                  className="inline-flex items-center justify-center bg-transparent border-none p-1 opacity-35 rounded-[var(--radius-sm)] transition-opacity hover:opacity-100 hover:text-[color:var(--priority-high)]"
                                   title="Remove member"
                                   onClick={() => handleRemoveMember(uid)}
                               >
@@ -374,34 +330,28 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
                 </ul>
 
                 <div
-                    className="invite-form"
-                    style={{
-                      marginTop: '15px',
-                      display: 'flex',
-                      gap: '8px',
-                      alignItems: 'center',
-                    }}
+                    className="mt-[15px] flex gap-2 items-center"
                 >
                   <input
                       type="email"
                       placeholder="Roommate's email"
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
+                      className="flex-1"
                   />
-                  <button className="btn-primary" onClick={handleInvite}>
+                  <button className="bg-[var(--teal-main)] text-white border-none px-[18px] py-2 font-bold rounded-[var(--radius-sm)] hover:enabled:bg-[var(--teal-dark)] hover:enabled:-translate-y-px hover:enabled:shadow-[0_3px_10px_rgba(16,185,129,0.25)] active:translate-y-0 active:shadow-none disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none" onClick={handleInvite}>
                     Invite
                   </button>
-                  <button className="btn-ghost" onClick={handleCancelInvite}>
+                  <button className="bg-transparent border-none px-3.5 py-1.5 text-[color:var(--text-muted)] font-semibold rounded-[var(--radius-sm)] hover:bg-[var(--bg-subtle)] hover:text-[color:var(--teal-dark)]" onClick={handleCancelInvite}>
                     Cancel
                   </button>
                   {inviteStatus && (
                       <p
                           className={
                             inviteStatus.type === 'success'
-                                ? 'status-success'
-                                : 'status-error'
+                                ? 'm-0 text-[length:var(--text-sm)] font-semibold text-[color:var(--accent-text)]'
+                                : 'm-0 text-[length:var(--text-sm)] font-semibold text-[color:var(--priority-high)]'
                           }
-                          style={{ margin: 0 }}
                       >
                         {inviteStatus.message}
                       </p>
@@ -410,7 +360,7 @@ function Header({ user, usersMap, workspace, setWorkspace, teams, activeTab, set
               </div>
           )}
 
-          <ul className="team-list">
+          <ul className="list-none p-0 mb-3 flex gap-2 flex-wrap">
             {/* Optional: render pending invites for this team here later */}
           </ul>
         </div>
