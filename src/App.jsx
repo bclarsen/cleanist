@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Home, Users } from 'lucide-react';
-import { isOverdue, parseDueDate, resolveCompletedWindowMs } from './utils/dateHelpers';
+import { isOverdue, parseDueDate, resolveCompletedWindowMs, isDueWithinWindow } from './utils/dateHelpers';
 import { getWorkspaceDocId } from "./utils/workspaceHelpers.js";
 import { useClickOutside } from './hooks/useClickOutside';
 import {
@@ -28,7 +28,10 @@ import ProfileSetup from './components/ProfileSetup';
 import Sidebar from './components/Sidebar';
 import UserProfile from './components/UserProfile';
 import Preferences from './components/Preferences';
+import History from './components/History';
 import InviteBanner from './components/InviteBanner';
+import ReminderBanner from './components/ReminderBanner';
+import { SETTINGS_TAB_IDS } from './constants/settings';
 
 
 const tasksRef = collection(db, 'tasks');
@@ -60,6 +63,13 @@ function App() {
   const [filterDate, setFilterDate] = useState('All');
   const [activeTab, setActiveTab] = useState('tasks');
   const [usersMap, setUsersMap] = useState({});
+  const [dismissedReminders, setDismissedReminders] = useState({});
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   const [workspace, setWorkspace] = useState('personal');
   const [teams, setTeams] = useState([{id: 'personal', name: 'Personal'}]);
@@ -367,6 +377,26 @@ function App() {
     setExpandedFilterType(expandedFilterType === type ? null : type);
   };
 
+  const handleDismissReminder = (taskId) => {
+    setDismissedReminders((prev) => ({ ...prev, [taskId]: true }));
+  };
+
+  const dueSoonTasks = tasks.filter((t) => {
+    const remindersEnabled = activeTeam?.preferences?.taskRemindersEnabled ?? true;
+    if (!remindersEnabled) return false;
+
+    const advanceMs = activeTeam?.preferences?.reminderAdvanceMs ?? (30 * 60 * 1000);
+    return (
+      isDueWithinWindow(t, advanceMs, {
+        quietHours: activeTeam?.preferences?.quietHours ?? false,
+        quietHoursStart: activeTeam?.preferences?.quietHoursStart,
+        quietHoursEnd: activeTeam?.preferences?.quietHoursEnd,
+      }) && !dismissedReminders[t.id]
+    );
+  });
+  // Reference 'now' so React re-calculates dueSoonTasks on tick
+  void now;
+
   return (
       <div className="app-shell">
         <Sidebar user={user} activeTab={activeTab} setActiveTab={setActiveTab}/>
@@ -391,7 +421,15 @@ function App() {
               />
           ))}
 
-          {activeTab !== 'profile' && activeTab !== 'preferences' && (
+          {dueSoonTasks.map((task) => (
+            <ReminderBanner
+              key={task.id}
+              task={task}
+              onDismiss={handleDismissReminder}
+            />
+          ))}
+
+          {!SETTINGS_TAB_IDS.includes(activeTab) && (
           <div className="workspace-banner">
             <div className="workspace-details">
               <span className="workspace-label">Workspace</span>
@@ -458,6 +496,9 @@ function App() {
                     teams={teams}
                     workspace={workspace}
                 />
+            )}
+            {activeTab === 'history' && (
+                <History user={user} workspace={workspace} tasks={tasks} />
             )}
             {activeTab === 'tasks' && (
                 <>
@@ -651,6 +692,7 @@ function App() {
                 <StatsPanel
                     tasks={tasks}
                     currentUser={user}
+                    workspace={workspace}
                 />
             )}
           </main>

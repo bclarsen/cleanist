@@ -46,6 +46,15 @@
   //     ]
   //   },
   // ]
-  "indexes": [],
+  "indexes": [
+    {
+      "collectionGroup": "taskHistory",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "workspace", "order": "ASCENDING" },
+        { "fieldPath": "ownerUid", "order": "ASCENDING" }
+      ]
+    }
+  ],
   "fieldOverrides": []
 }

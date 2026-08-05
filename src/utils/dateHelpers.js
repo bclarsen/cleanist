@@ -23,6 +23,61 @@ export function parseDueDate(dueDate) {
   return new Date(y, m - 1, d, 23, 59, 59, 999);
 }
 
+/**
+ * Checks if current time is within Quiet Hours.
+ * Accepts start and end times as "HH:mm" strings (defaults: "22:00" to "08:00").
+ */
+export function isQuietHours(date = new Date(), start = '22:00', end = '08:00') {
+  const currentMinutes = date.getHours() * 60 + date.getMinutes();
+  
+  const [startH, startM] = (start || '22:00').split(':').map(Number);
+  const [endH, endM] = (end || '08:00').split(':').map(Number);
+
+  const startMinutes = (startH || 0) * 60 + (startM || 0);
+  const endMinutes = (endH || 0) * 60 + (endM || 0);
+
+  if (startMinutes === endMinutes) return false;
+
+  if (startMinutes < endMinutes) {
+    // Same day range (e.g. 13:00 to 17:00)
+    return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+  } else {
+    // Overnight range (e.g. 22:00 to 08:00)
+    return currentMinutes >= startMinutes || currentMinutes < endMinutes;
+  }
+}
+
+/**
+ * Checks if a task is due within the next specified window in milliseconds (default 30 minutes)
+ * and is not already overdue or completed. If quietHours is enabled and currently active, holds reminders.
+ */
+export function isDueWithinWindow(task, windowMs = 30 * 60 * 1000, options = {}) {
+  if (!task) return false;
+  if (options.quietHours && isQuietHours(new Date(), options.quietHoursStart, options.quietHoursEnd)) {
+    return false;
+  }
+
+  // A completed one-time task does not trigger reminders
+  if (task.frequency === 'once' && task.lastCompleted) return false;
+
+  let dueTimeMs = null;
+  if (task.dueDate) {
+    const d = parseDueDate(task.dueDate);
+    if (d) dueTimeMs = d.getTime();
+  } else if (task.lastCompleted && task.frequency !== 'once') {
+    const next = getNextDue(task.lastCompleted, task.frequency);
+    if (next) dueTimeMs = next.getTime();
+  }
+
+  if (!dueTimeMs) return false;
+
+  const now = Date.now();
+  const timeUntilDue = dueTimeMs - now;
+
+  // Due within window (e.g. 0 < timeUntilDue <= 30 mins)
+  return timeUntilDue > 0 && timeUntilDue <= windowMs;
+}
+
 export function hasDueTime(dueDate) {
   return !!dueDate && String(dueDate).includes('T');
 }

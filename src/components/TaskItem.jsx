@@ -8,7 +8,7 @@ import {
   Clock,
   Trash2,
 } from 'lucide-react';
-import { updateDoc, deleteDoc, doc, arrayUnion } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase';
 import {
   formatCompletedAt,
@@ -36,29 +36,66 @@ const FREQ_LABELS = {
 
 function TaskItem({ task, currentUser, allAssignees = [] }) {
   const [expanded, setExpanded] = useState(false);
+  const [actionError, setActionError] = useState('');
   const assignee = allAssignees.find((a) => a.uid === task.assignedTo);
   const priority = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.medium;
   const overdue = isOverdue(task);
 
   const markDone = async () => {
+    setActionError('');
     const now = Date.now();
-    await updateDoc(doc(db, 'tasks', task.id), {
-      lastCompleted: now,
-      lastCompletedBy: currentUser.uid,
-      lastCompletedByName: currentUser.displayName,
-      completionHistory: arrayUnion({
-        completedAt: now,
-        completedBy: currentUser.uid,
-        completedByName: currentUser.displayName,
-        dueAt: task.dueDate || null, // snapshot due date for permanent history
-        // Snapshot too: whether this completion beat its deadline. Derived now
-        // because `dueAt` alone can't tell you later — the task may be edited.
-        wasLate: task.dueDate ? now > parseDueDate(task.dueDate).getTime() : null,
-      }),
-    });
+    const completion = {
+      completedAt: now,
+      completedBy: currentUser.uid,
+      completedByName: currentUser.displayName,
+      dueAt: task.dueDate || null, // snapshot due date for permanent history
+      // Snapshot too: whether this completion beat its deadline. Derived now
+      // because `dueAt` alone can't tell you later — the task may be edited.
+      wasLate: task.dueDate ? now > parseDueDate(task.dueDate).getTime() : null,
+    };
+    try {
+      // This preserves the existing task behavior even before the new
+      // taskHistory collection's Firestore rules are deployed.
+      await updateDoc(doc(db, 'tasks', task.id), {
+        lastCompleted: now,
+        lastCompletedBy: currentUser.uid,
+        lastCompletedByName: currentUser.displayName,
+        completionHistory: arrayUnion(completion),
+      });
+    } catch (err) {
+      console.error('Error completing task:', err);
+      setActionError('Could not mark this task complete. Please try again.');
+      return;
+    }
+
+    try {
+      // A separate permanent entry makes completed work survive task deletion.
+      await addDoc(collection(db, 'taskHistory'), {
+        ...completion,
+        taskId: task.id,
+        taskName: task.name,
+        room: task.room || 'Other',
+        priority: task.priority || 'medium',
+        frequency: task.frequency || 'once',
+        workspace: task.workspace || 'personal',
+        ownerUid: task.ownerUid || currentUser.uid,
+      });
+    } catch (err) {
+      // The task was completed successfully above; it remains visible in the
+      // History page through completionHistory until the new rules are live.
+      console.error('Error storing permanent task history:', err);
+    }
   };
 
-  const removeTask = () => deleteDoc(doc(db, 'tasks', task.id));
+  const removeTask = async () => {
+    setActionError('');
+    try {
+      await deleteDoc(doc(db, 'tasks', task.id));
+    } catch (err) {
+      console.error('Error deleting task:', err);
+      setActionError('Could not delete this task. Please try again.');
+    }
+  };
   const nextDue = task.lastCompleted
     ? getNextDue(task.lastCompleted, task.frequency)
     : null;
@@ -204,6 +241,7 @@ function TaskItem({ task, currentUser, allAssignees = [] }) {
             )}
           </div>
         )}
+        {actionError && <p className="task-action-error">{actionError}</p>}
       </div>
     </div>
   );

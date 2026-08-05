@@ -159,6 +159,7 @@ function TaskForm({
               <label>Due Time</label>
               <input
                 type="time"
+                step={60}
                 value={dueTime}
                 // Time alone is meaningless — it only qualifies a date.
                 disabled={!dueDate}

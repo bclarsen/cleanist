@@ -19,6 +19,14 @@ const COMPLETED_PRESETS = [
   { value: WEEK_MS, label: '1 week' },
 ];
 
+const THIRTY_MINS_MS = 30 * 60 * 1000;
+const ONE_HOUR_MS = 60 * 60 * 1000;
+
+const REMINDER_PRESETS = [
+  { value: THIRTY_MINS_MS, label: '30 mins' },
+  { value: ONE_HOUR_MS, label: '1 hr' },
+];
+
 const DEFAULT_USER_PREFS = {
   emailNotifications: true,
   defaultWorkspace: 'personal',
@@ -28,9 +36,96 @@ const DEFAULT_USER_PREFS = {
 
 const DEFAULT_TEAM_PREFS = {
   quietHours: false,
+  quietHoursStart: '22:00',
+  quietHoursEnd: '08:00',
   autoAssign: 'manual',
   completedWindowMs: DEFAULT_COMPLETED_WINDOW_MS,
+  taskRemindersEnabled: true,
+  reminderAdvanceMs: THIRTY_MINS_MS,
 };
+
+function ReminderAdvanceControl({ value, disabled, onChange }) {
+  const isPreset = REMINDER_PRESETS.some((p) => p.value === value);
+  const [custom, setCustom] = useState(() =>
+    msToParts(value ?? THIRTY_MINS_MS)
+  );
+  const [showCustom, setShowCustom] = useState(!isPreset);
+
+  const selectValue = showCustom ? 'custom' : String(value ?? THIRTY_MINS_MS);
+
+  const handleSelect = (next) => {
+    if (next === 'custom') {
+      setCustom(msToParts(value ?? THIRTY_MINS_MS));
+      setShowCustom(true);
+      return;
+    }
+    setShowCustom(false);
+    onChange(Number(next));
+  };
+
+  const customMs = partsToMs(custom);
+
+  return (
+    <div className="completed-window-control">
+      <select
+        value={selectValue}
+        disabled={disabled}
+        onChange={(e) => handleSelect(e.target.value)}
+      >
+        {REMINDER_PRESETS.map((p) => (
+          <option key={p.value} value={p.value}>
+            {p.label}
+          </option>
+        ))}
+        <option value="custom">Custom…</option>
+      </select>
+
+      {showCustom && (
+        <div className="completed-window-custom">
+          <div className="completed-window-fields">
+            {[
+              { key: 'hours', label: 'Hours', max: 72 },
+              { key: 'minutes', label: 'Minutes', max: 59 },
+            ].map((field) => (
+              <label key={field.key}>
+                <span>{field.label}</span>
+                <input
+                  type="number"
+                  min="0"
+                  max={field.max}
+                  value={custom[field.key]}
+                  disabled={disabled}
+                  onChange={(e) =>
+                    setCustom((prev) => ({
+                      ...prev,
+                      [field.key]: e.target.value === ''
+                        ? ''
+                        : Math.max(0, Number(e.target.value)),
+                    }))
+                  }
+                />
+              </label>
+            ))}
+          </div>
+          <div className="completed-window-actions">
+            <button
+              className="btn-primary"
+              disabled={disabled || customMs <= 0 || customMs === value}
+              onClick={() => onChange(customMs)}
+            >
+              Apply
+            </button>
+            <span className="completed-window-preview">
+              {customMs > 0
+                ? `Reminds ${formatDuration(customMs)} before due`
+                : 'Pick at least one minute'}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /**
  * How long completed tasks stay visible. Presets cover the common cases; "Custom"
@@ -302,11 +397,69 @@ function Preferences({ user, profile, teams = [], workspace }) {
                     <div className="preference-list">
                       <div className="preference-row">
                         <div className="preference-label">
+                          <strong>Task Reminders</strong>
+                          <p>
+                            Notify household members about upcoming tasks before they are due.
+                          </p>
+                          {teamPrefs.taskRemindersEnabled && (
+                            <div style={{ marginTop: '10px' }}>
+                              <label style={{ fontSize: '13px', fontWeight: '600', color: 'var(--teal-dark)', display: 'block', marginBottom: '6px' }}>
+                                Notify in advance:
+                              </label>
+                              <ReminderAdvanceControl
+                                value={teamPrefs.reminderAdvanceMs}
+                                disabled={!canEditTeam || savingTeam}
+                                onChange={(reminderAdvanceMs) => saveTeamPref({ reminderAdvanceMs })}
+                              />
+                            </div>
+                          )}
+                        </div>
+                        <div className="preference-control">
+                          <input
+                            type="checkbox"
+                            checked={teamPrefs.taskRemindersEnabled}
+                            disabled={!canEditTeam || savingTeam}
+                            onChange={(e) => saveTeamPref({ taskRemindersEnabled: e.target.checked })}
+                          />
+                        </div>
+                      </div>
+                      <div className="preference-row">
+                        <div className="preference-label">
                           <strong>Quiet Hours</strong>
                           <p>
-                            Hold task reminders for everyone between 10pm and 8am.
-                            <em> Saved, but reminders aren&apos;t sent yet.</em>
+                            Hold task reminders for everyone during configured hours.
                           </p>
+                          {teamPrefs.quietHours && (
+                            <div className="quiet-hours-controls">
+                              <div className="quiet-hours-field">
+                                <label htmlFor="quiet-start">Start Time</label>
+                                <input
+                                  id="quiet-start"
+                                  type="time"
+                                  className="time-input"
+                                  value={teamPrefs.quietHoursStart || '22:00'}
+                                  disabled={!canEditTeam || savingTeam}
+                                  onChange={(e) =>
+                                    saveTeamPref({ quietHoursStart: e.target.value })
+                                  }
+                                />
+                              </div>
+                              <span className="quiet-hours-separator">to</span>
+                              <div className="quiet-hours-field">
+                                <label htmlFor="quiet-end">End Time</label>
+                                <input
+                                  id="quiet-end"
+                                  type="time"
+                                  className="time-input"
+                                  value={teamPrefs.quietHoursEnd || '08:00'}
+                                  disabled={!canEditTeam || savingTeam}
+                                  onChange={(e) =>
+                                    saveTeamPref({ quietHoursEnd: e.target.value })
+                                  }
+                                />
+                              </div>
+                            </div>
+                          )}
                         </div>
                         <div className="preference-control">
                           <input

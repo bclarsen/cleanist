@@ -219,6 +219,15 @@ body { margin: 0; }
   }
 }
 
+.reminder-banner {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.reminder-banner .invite-banner-icon {
+  color: #d97706;
+}
+
 /* ── Workspace Banner ────────────────────────────────────── */
 .workspace-banner {
   margin: 16px 24px 20px;
@@ -1065,6 +1074,48 @@ input:focus, select:focus {
 }
 .settings-card-note strong { color: var(--teal-dark); }
 
+/* ── Workspace task history ───────────────────────────────── */
+.history-page-description {
+  max-width: 520px;
+  margin: 6px auto 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.history-settings-card {
+  align-items: stretch;
+  padding: 30px 36px;
+}
+.workspace-history-list {
+  list-style: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+.workspace-history-entry {
+  display: flex;
+  gap: 14px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border-light);
+}
+.workspace-history-entry:first-child { border-top: none; padding-top: 0; }
+.workspace-history-icon { color: var(--teal-main); flex-shrink: 0; padding-top: 2px; }
+.workspace-history-content { display: flex; flex-direction: column; gap: 4px; }
+.workspace-history-content strong { color: var(--teal-dark); }
+.workspace-history-content span { color: var(--text-muted); font-size: var(--text-sm); }
+.workspace-history-content .history-late,
+.workspace-history-content .workspace-history-on-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.workspace-history-content .workspace-history-on-time { color: var(--teal-main); }
+
+.task-action-error {
+  margin: 12px 0 0;
+  color: var(--priority-high);
+  font-size: var(--text-sm);
+}
+
 /* Subheading splitting the card into groups of related preferences. */
 .preference-group-heading {
   width: 100%;
@@ -1120,6 +1171,55 @@ input:focus, select:focus {
 .completed-window-preview {
   font-size: var(--text-xs);
   color: var(--text-muted);
+}
+
+/* ── Quiet Hours Controls ─────────────────────────────────── */
+.quiet-hours-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  width: fit-content;
+}
+
+.quiet-hours-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.quiet-hours-field label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--teal-dark);
+}
+
+.quiet-hours-separator {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  padding-bottom: 8px;
+}
+
+.time-input {
+  padding: 6px 10px;
+  font-size: var(--text-sm);
+  font-family: var(--sans);
+  color: var(--text-main);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+
+.time-input:focus {
+  border-color: var(--teal-main);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
 }
 
 .preference-control { flex-shrink: 0; }
@@ -1181,32 +1281,42 @@ input:focus, select:focus {
   padding: 0 4px 20px;
 }
 .sidebar-brand h1 { font-size: 18px; color: var(--teal-dark); font-weight: 700; margin: 0; }
+.sidebar-brand.clickable {
+  cursor: pointer;
+  user-select: none;
+  transition: opacity var(--t-fast), transform var(--t-fast);
+}
+.sidebar-brand.clickable:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
 
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
   flex: 1;
 }
 
 .sidebar-tab {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
   text-align: left;
   background: none;
   border: none;
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 14px;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
+  transition: all var(--t-fast);
 }
-.sidebar-tab:hover { background: var(--bg-subtle); }
-.sidebar-tab.active { background: var(--teal-light); color: var(--teal-dark); }
-.sidebar-tab-icon { flex-shrink: 0; }
+.sidebar-tab:hover { background: var(--bg-subtle); color: var(--teal-dark); }
+.sidebar-tab.active { background: var(--teal-light); color: var(--teal-dark); font-weight: 700; }
+.sidebar-tab-icon { flex-shrink: 0; width: 22px; height: 22px; }
 
 .sidebar-footer {
   display: flex;
@@ -1301,9 +1411,9 @@ input:focus, select:focus {
 
   .sidebar-tab {
     flex-direction: column;
-    gap: 2px;
-    font-size: 11px;
-    padding: 6px 4px;
+    gap: 4px;
+    font-size: 12px;
+    padding: 8px 6px;
     text-align: center;
   }
 
@@ -1315,4 +1425,3 @@ input:focus, select:focus {
   .profile-name-row   { flex-direction: column; }
   .tab { font-size: 14px; }
 }
-
