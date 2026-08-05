@@ -71,6 +71,77 @@
   color: var(--text-main);
 }
 
+/* Dark mode — Slate pack */
+.dark {
+  /* Backgrounds */
+  --bg:          #0d1117;
+  --bg-card:     #161b22;
+  --bg-subtle:   #1f2633;
+
+  /* Borders */
+  --border:       #21262d;
+  --border-light: #1c2129;
+
+  /* Brand — steel blue replaces teal in dark mode */
+  --teal-dark:   #6ea8d4;   /* main accent, used for headings/labels */
+  --teal-main:   #5a96c4;   /* slightly deeper for interactive elements */
+  --teal-light:  #6ea8d4;
+  --teal-faint:  #0d1a26;
+
+  /* Accent aliases */
+  --accent:       #5a96c4;
+  --accent-light: #0f1f33;
+  --accent-text:  #8ec0e0;
+
+  /* Text */
+  --text-h:      #e6edf3;
+  --text-main:   #b8c4d0;
+  --text:        #b8c4d0;
+  --text-muted:  #52606e;
+
+  /* Priority colours — dark-safe */
+  --priority-high:    #e08080;
+  --priority-high-bg: #2e1212;
+  --priority-med:     #c9a84c;
+  --priority-med-bg:  #2e1f0c;
+  --priority-low:     #6abf8a;
+  --priority-low-bg:  #0e2618;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-sm: 0 2px 12px rgba(0,0,0,0.55);
+  --shadow-md: 0 6px 28px rgba(0,0,0,0.65);
+
+  /* Force body background (var(--bg) on :root won't repaint body) */
+  background-color: #0d1117;
+  color: #b8c4d0;
+}
+
+/* ── Dark-mode overrides for hardcoded light values ─────── */
+.dark .app-header {
+  background: rgba(13, 17, 23, 0.92);
+  border-bottom-color: rgba(33, 38, 45, 0.95);
+}
+.dark .btn-pill-outline {
+  background: rgba(22, 27, 34, 0.85);
+}
+.dark .reminder-banner {
+  border-color: #7a3a0e;
+  background: #271607;
+}
+/* Active sidebar tab: dark navy bg + white text */
+.dark .sidebar-tab.active {
+  background: #1a3a5c;
+  color: #ffffff;
+}
+.dark .sidebar-tab.active .sidebar-tab-icon {
+  color: #ffffff;
+}
+.dark .sidebar-tab:hover {
+  background: var(--bg-subtle);
+  color: var(--teal-dark);
+}
+
 /* ── Reset ───────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 body { margin: 0; }
@@ -779,7 +850,8 @@ input[type="text"],
 input[type="email"],
 input[type="date"],
 input[type="number"],
-select {
+select,
+textarea {
   font-family: var(--sans);
   font-size: 14px;
   padding: 8px 12px;
@@ -787,12 +859,22 @@ select {
   border-radius: var(--radius-sm);
   background: var(--bg-card);
   color: var(--teal-dark);
-  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+  transition: border-color var(--t-fast), box-shadow var(--t-fast), background var(--t-fast);
 }
-input:focus, select:focus {
+/* Accent focus glow */
+input:focus,
+select:focus,
+textarea:focus {
   outline: none;
-  border-color: var(--teal-main);
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(59, 156, 255, 0.2);
+}
+/* Invalid state */
+input:invalid,
+select:invalid,
+textarea:invalid {
+  border-color: var(--priority-high);
+  background: var(--priority-high-bg);
 }
 
 /* ══════════════════════════════════════════════════════════

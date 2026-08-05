@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Lock, Users } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -32,7 +32,9 @@ const DEFAULT_USER_PREFS = {
   defaultWorkspace: 'personal',
   // null, not a number: "follow the team's window". See resolveCompletedWindowMs.
   completedWindowMs: null,
+  darkMode: false,
 };
+
 
 const DEFAULT_TEAM_PREFS = {
   quietHours: false,
@@ -235,9 +237,20 @@ function CompletedWindowControl({ value, allowInherit, disabled, onChange }) {
 function Preferences({ user, profile, teams = [], workspace }) {
   const [scope, setScope] = useState('user');
 
+
+
   // Read straight from the `users` snapshot rather than mirroring into local state:
   // writes come back through App's usersMap listener, so this stays in step.
   const userPrefs = { ...DEFAULT_USER_PREFS, ...(profile?.preferences || {}) };
+
+  // Apply or remove dark mode class on body based on user preference
+  useEffect(() => {
+    if (userPrefs.darkMode) {
+      document.body.classList.add('dark');
+    } else {
+      document.body.classList.remove('dark');
+    }
+  }, [userPrefs.darkMode]);
 
   const activeTeam = teams.find((t) => t.id === workspace);
   const isPersonal = workspace === 'personal' || !activeTeam;
@@ -346,6 +359,20 @@ function Preferences({ user, profile, teams = [], workspace }) {
                     </select>
                   </div>
                 </div>
+                  <div className="preference-row">
+                    <div className="preference-label">
+                      <strong>Dark Mode</strong>
+                      <p>Enable dark theme for the app.</p>
+                    </div>
+                    <div className="preference-control">
+                      <input
+                        type="checkbox"
+                        checked={userPrefs.darkMode}
+                        disabled={savingUser}
+                        onChange={(e) => saveUserPref({ darkMode: e.target.checked })}
+                      />
+                    </div>
+                  </div>
               </div>
 
               <h3 className="preference-group-heading">Completed tasks</h3>
